@@ -52,17 +52,11 @@ public class GameState {
     public void playCard(int index) {
         Player player = getCurrentPlayer();
         Card card = player.playCard(index);
-        if (canPlay(card)) {
-            int highestValue = fireworks.get(card.getCardSuit());
-            fireworks.put(card.getCardSuit(), Math.max(highestValue, card.getCadNumber()));
-        } else {
-            discardPile.add(card);
-            fuses--;
-        }
-
+        int highestValue = fireworks.get(card.getCardSuit());
+        fireworks.put(card.getCardSuit(), Math.max(highestValue, card.getCadNumber()));
     }
 
-    private boolean canPlay(Card card) {
+    public boolean canPlay(Card card) {
         int highestValue = fireworks.get(card.getCardSuit());
         return card.getCadNumber() == highestValue + 1;
     }
@@ -81,9 +75,10 @@ public class GameState {
     }
 
     public void addTip() {
-        //todo
+        if (tips == 8) {
+            return;
+        }
         tips++;
-        nextPlayer();
     }
 
     public int calculateScore() {

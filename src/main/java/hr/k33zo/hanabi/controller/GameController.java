@@ -7,10 +7,14 @@ import hr.k33zo.hanabi.model.GameState;
 import hr.k33zo.hanabi.model.Player;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GameController {
     @FXML
@@ -35,8 +39,11 @@ public class GameController {
     private Label remainingTipsLabel;
 
 
-    private int selectedCardIndex = -1;
-
+    private Integer selectedCardIndexPlayer1 = -1;
+    private Integer selectedCardIndexPlayer2 = -1;
+    private Player currentPlayer;
+    private Integer fuseCounter;
+    private Integer tipCounter;
 
 
     private GameState gameState;
@@ -58,9 +65,18 @@ public class GameController {
         player1HandListView.getItems().addAll(initialHands.get(0));
         player2HandListView.getItems().addAll(initialHands.get(1));
         player1HandListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            selectedCardIndex = player1HandListView.getSelectionModel().getSelectedIndex();
+            selectedCardIndexPlayer1 = player1HandListView.getSelectionModel().getSelectedIndex();
         });
+        player2HandListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            selectedCardIndexPlayer2 = player2HandListView.getSelectionModel().getSelectedIndex();
+        });
+
+        currentPlayer = gameState.getCurrentPlayer();
+        fuseCounter = gameState.getFuses();
+        tipCounter = gameState.getTips();
+
         updateLabels();
+        updatePlayerHandListView(0);
     }
     public void handleDrawCard(ActionEvent event) {
         Player player = gameState.getCurrentPlayer();
@@ -75,50 +91,81 @@ public class GameController {
 
     @FXML
     public void handlePlayCardButtonAction(ActionEvent event) {
-        if (selectedCardIndex >= 0) {
-            Player player = gameState.getCurrentPlayer();
-            Card card = player.getHand().get(selectedCardIndex);
-            if (canPlayCard(card)) {
-                gameState.playCard(selectedCardIndex);
-                updateFireworksListView(card);
-                updatePlayerHandListView(gameState.getPlayers().indexOf(player));
-                handleDrawCard(event);
-                selectedCardIndex = -1;
-            }
+        Player player = gameState.getCurrentPlayer();
+        int selectedCardIndex = player == gameState.getPlayers().get(0) ? selectedCardIndexPlayer1 : selectedCardIndexPlayer2;
+        if (player != currentPlayer || selectedCardIndex < 0) {
+            return;
         }
+        Card card = player.getHand().get(selectedCardIndex);
+        if (gameState.canPlay(card)) {
+            gameState.playCard(selectedCardIndex);
+            updateFireworksListView(card);
+            updatePlayerHandListView(gameState.getPlayers().indexOf(player));
+
+            if (player == gameState.getPlayers().get(0)) {
+                selectedCardIndexPlayer1 = -1;
+            } else {
+                selectedCardIndexPlayer2 = -1;
+            }
+        } else {
+            gameState.discardCard(gameState.getPlayers().indexOf(player), selectedCardIndex);
+            updatePlayerHandListView(gameState.getPlayers().indexOf(player));
+            fuseCounter--;
+        }
+        handleDrawCard(event);
         updateLabels();
+        gameState.nextPlayer();
+        currentPlayer = gameState.getCurrentPlayer();
+        updatePlayerHandListView(gameState.getPlayers().indexOf(player));
+        updateDiscardPileListView();
+        checkGameOver();
     }
 
     @FXML
     public void handleDiscardCardButtonAction(ActionEvent event) {
-        if (selectedCardIndex >= 0) {
-            Player player = gameState.getCurrentPlayer();
-            Card card = player.playCard(selectedCardIndex);
-            gameState.getDiscardPile().add(card);
-            updatePlayerHandListView(gameState.getPlayers().indexOf(player));
-            updateDiscardPileListView();
-            handleDrawCard(event);
-            selectedCardIndex = -1;
-            updateLabels();
+        Player player = gameState.getCurrentPlayer();
+        int selectedCardIndex = player == gameState.getPlayers().get(0) ? selectedCardIndexPlayer1 : selectedCardIndexPlayer2;
+        if (player != currentPlayer || selectedCardIndex < 0) {
+            return;
         }
+        Card card = player.playCard(selectedCardIndex);
+        gameState.getDiscardPile().add(card);
+        updatePlayerHandListView(gameState.getPlayers().indexOf(player));
+        updateDiscardPileListView();
+        handleDrawCard(event);
+        if (player == gameState.getPlayers().get(0)) {
+            selectedCardIndexPlayer1 = -1;
+        } else {
+            selectedCardIndexPlayer2 = -1;
+        }
+        if (tipCounter < 8) {
+            tipCounter++;
+        }
+        maxTipsWarning();
+        updateLabels();
+        gameState.nextPlayer();
+        currentPlayer = gameState.getCurrentPlayer();
+        updatePlayerHandListView(gameState.getPlayers().indexOf(player));
+
     }
 
     @FXML
     public void handleGiveTipButtonAction(ActionEvent event) {
-        Player currentPlayer = gameState.getCurrentPlayer();
+ /*     Player currentPlayer = gameState.getCurrentPlayer();
         Player otherPlayer = gameState.getPlayers().get(0) == currentPlayer ? gameState.getPlayers().get(1) : gameState.getPlayers().get(0);
 
         Card cardToGiveTipAbout = otherPlayer.getHand().get(0);
 
-        // Give a tip about the card's suit
-        // This is just an example, you might want to implement a different logic
         giveTipAboutSuit(otherPlayer, cardToGiveTipAbout.getCardSuit());
 
-        // Update the UI to reflect the tip given
-        // This is just an example, you might want to implement a different logic
         updatePlayerHandListView(gameState.getPlayers().indexOf(otherPlayer));
         gameState.giveTip();
+        updateLabels();*/
+        Player otherPlayer = gameState.getPlayers().get(0) == currentPlayer ? gameState.getPlayers().get(1) : gameState.getPlayers().get(0);
+        generatePossibleTips(otherPlayer);
+        tipCounter--;
         updateLabels();
+        checkTips();
     }
 
     private void giveTipAboutSuit(Player player, Suit suit) {
@@ -133,8 +180,14 @@ public class GameController {
         Player player = gameState.getPlayers().get(playerIndex);
         if (playerIndex == 0) {
             player1HandListView.getItems().setAll(player.getHand());
+            player1HandListView.setDisable(player != currentPlayer);
+            player2HandListView.setDisable(player == currentPlayer);
+
+
         } else {
             player2HandListView.getItems().setAll(player.getHand());
+            player2HandListView.setDisable(player != currentPlayer);
+            player1HandListView.setDisable(player == currentPlayer);
         }
     }
 
@@ -169,8 +222,113 @@ public class GameController {
     }
 
     private void updateLabels() {
-        remainingFusesLabel.setText(String.valueOf(gameState.getFuses()));
-        remainingTipsLabel.setText(String.valueOf(gameState.getTips()));
+        remainingFusesLabel.setText(fuseCounter.toString());
+        remainingTipsLabel.setText(tipCounter.toString());
     }
+
+    public void checkGameOver() {
+        if (fuseCounter == 0) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Game Over");
+            alert.setHeaderText(null);
+            alert.setContentText("Game Over");
+
+            alert.showAndWait();
+
+            resetGame();
+        }
+    }
+
+    public void checkTips() {
+        if (tipCounter == 0) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("No more tips!");
+            alert.setHeaderText(null);
+            alert.setContentText("No more tips!");
+            alert.showAndWait();
+
+        }
+    }
+    public void maxTipsWarning() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("You have maximum tips!");
+        alert.setHeaderText(null);
+        alert.setContentText("You have maximum tips!");
+        alert.showAndWait();
+
+    }
+
+    public void resetGame() {
+
+        gameState = new GameState();
+
+        // UI
+        player1HandListView.getItems().setAll(gameState.getPlayers().get(0).getHand());
+        player2HandListView.getItems().setAll(gameState.getPlayers().get(1).getHand());
+        discardPileListView.getItems().clear();
+        blueFireworkListView.getItems().clear();
+        greenFireworkListView.getItems().clear();
+        redFireworkListView.getItems().clear();
+        yellowFireworkListView.getItems().clear();
+        whiteFireworkListView.getItems().clear();
+
+        selectedCardIndexPlayer1 = -1;
+        selectedCardIndexPlayer2 = -1;
+
+        currentPlayer = gameState.getCurrentPlayer();
+
+        fuseCounter = gameState.getFuses();
+        tipCounter = gameState.getTips();
+
+        // Update the labels
+        updateLabels();
+        updatePlayerHandListView(0);
+    }
+
+    public void generatePossibleTips(Player player) {
+        Map<Suit, List<Integer>> suitIndices = new HashMap<>();
+        Map<Integer, List<Integer>> numberIndices = new HashMap<>();
+
+        // Initialize the maps
+        for (Suit suit : Suit.values()) {
+            suitIndices.put(suit, new ArrayList<>());
+        }
+        for (int number = 1; number <= 5; number++) {
+            numberIndices.put(number, new ArrayList<>());
+        }
+
+        //  suit and number
+        List<Card> hand = player.getHand();
+        for (int i = 0; i < hand.size(); i++) {
+            Card card = hand.get(i);
+            suitIndices.get(card.getCardSuit()).add(i);
+            numberIndices.get(card.getCadNumber()).add(i);
+        }
+
+        // Generate the tips
+        List<String> possibleTips = new ArrayList<>();
+        for (Suit suit : Suit.values()) {
+            List<Integer> indices = suitIndices.get(suit);
+            if (!indices.isEmpty()) {
+                possibleTips.add("There are " + indices.size() + " " + suit + " cards in your hand at indices "
+                        + indices + ".");
+            }
+        }
+        for (int number = 1; number <= 5; number++) {
+            List<Integer> indices = numberIndices.get(number);
+            if (!indices.isEmpty()) {
+                possibleTips.add("There are " + indices.size() + " cards with number " + number +
+                        " in your hand at indices " + indices + ".");
+            }
+        }
+
+        // Display the tips
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Possible Tips");
+        alert.setHeaderText(null);
+        alert.setContentText(String.join("\n", possibleTips));
+        alert.showAndWait();
+    }
+
 
 }

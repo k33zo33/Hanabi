@@ -36,6 +36,7 @@ public class GameState {
         for (int i = 0; i < 5; i++) {
             for (Player player : players) {
                 Card card = deck.dealCard();
+                card.setOwner(player); // Set the owner of the card
                 player.drawCard(card);
             }
         }

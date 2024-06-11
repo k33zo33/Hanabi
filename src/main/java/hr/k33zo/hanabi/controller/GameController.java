@@ -1,15 +1,15 @@
 package hr.k33zo.hanabi.controller;
 
 import hr.k33zo.hanabi.enums.Suit;
-import hr.k33zo.hanabi.model.Card;
-import hr.k33zo.hanabi.model.CardListCell;
-import hr.k33zo.hanabi.model.GameState;
-import hr.k33zo.hanabi.model.Player;
+import hr.k33zo.hanabi.model.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.layout.VBox;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +37,8 @@ public class GameController {
     private Label remainingFusesLabel;
     @FXML
     private Label remainingTipsLabel;
+    @FXML
+    private VBox tipsVBox;
 
 
     private Integer selectedCardIndexPlayer1 = -1;
@@ -179,12 +181,16 @@ public class GameController {
     private void updatePlayerHandListView(int playerIndex) {
         Player player = gameState.getPlayers().get(playerIndex);
         if (playerIndex == 0) {
+            player1HandListView.setCellFactory(param -> new HiddenCardListCell());
+            player2HandListView.setCellFactory(param -> new CardListCell());
             player1HandListView.getItems().setAll(player.getHand());
             player1HandListView.setDisable(player != currentPlayer);
             player2HandListView.setDisable(player == currentPlayer);
 
 
         } else {
+            player1HandListView.setCellFactory(param -> new CardListCell());
+            player2HandListView.setCellFactory(param -> new HiddenCardListCell());
             player2HandListView.getItems().setAll(player.getHand());
             player2HandListView.setDisable(player != currentPlayer);
             player1HandListView.setDisable(player == currentPlayer);
@@ -322,12 +328,34 @@ public class GameController {
             }
         }
 
+        tipsVBox.getChildren().clear();
+        for (String tip : possibleTips) {
+            CheckBox checkBox = new CheckBox(tip);
+            checkBox.setOnAction(event -> {
+                if (checkBox.isSelected()) {
+                    // Uncheck all other CheckBoxes
+                    for (Node node : tipsVBox.getChildren()) {
+                        if (node instanceof CheckBox && node != checkBox) {
+                            ((CheckBox) node).setSelected(false);
+                        }
+                    }
+                    // Give the tip
+                    //giveTip(checkBox.getText());
+                }
+            });
+            tipsVBox.getChildren().add(checkBox);
+        }
+
         // Display the tips
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        /*Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Possible Tips");
         alert.setHeaderText(null);
         alert.setContentText(String.join("\n", possibleTips));
-        alert.showAndWait();
+        alert.showAndWait();*/
+    }
+
+    public  Player getCurrentPlayer() {
+        return currentPlayer;
     }
 
 

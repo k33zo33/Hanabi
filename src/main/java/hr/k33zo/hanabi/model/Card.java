@@ -8,6 +8,8 @@ public class Card {
     private int cardNumber;
     private Boolean isVisible;
 
+    private Player owner;
+
     public Card(Suit cardSuit, int cadNumber, Boolean isVisible) {
         this.cardSuit = cardSuit;
         this.cardNumber = cadNumber;
@@ -35,6 +37,14 @@ public class Card {
 
     public void setVisible(Boolean visible) {
         isVisible = visible;
+    }
+
+    public void setOwner(Player owner) {
+        this.owner = owner;
+    }
+
+    public Player getOwner() {
+        return owner;
     }
 
     @Override

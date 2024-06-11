@@ -55,7 +55,7 @@ public class GameController {
     }
 
     public void initialize() {
-        player1HandListView.setCellFactory(param -> new CardListCell());
+        player1HandListView.setCellFactory(param -> new HiddenCardListCell());
         player2HandListView.setCellFactory(param -> new CardListCell());
         discardPileListView.setCellFactory(param -> new CardListCell());
         blueFireworkListView.setCellFactory(param -> new CardListCell());
@@ -78,7 +78,7 @@ public class GameController {
         tipCounter = gameState.getTips();
 
         updateLabels();
-        updatePlayerHandListView(0);
+        //updatePlayerHandListView(0);
     }
     public void handleDrawCard(ActionEvent event) {
         Player player = gameState.getCurrentPlayer();
@@ -181,16 +181,17 @@ public class GameController {
     private void updatePlayerHandListView(int playerIndex) {
         Player player = gameState.getPlayers().get(playerIndex);
         if (playerIndex == 0) {
-            player1HandListView.setCellFactory(param -> new HiddenCardListCell());
-            player2HandListView.setCellFactory(param -> new CardListCell());
+            player1HandListView.setCellFactory(param -> new CardListCell());
+            player2HandListView.setCellFactory(param -> new HiddenCardListCell());
             player1HandListView.getItems().setAll(player.getHand());
             player1HandListView.setDisable(player != currentPlayer);
             player2HandListView.setDisable(player == currentPlayer);
 
 
         } else {
-            player1HandListView.setCellFactory(param -> new CardListCell());
-            player2HandListView.setCellFactory(param -> new HiddenCardListCell());
+
+            player1HandListView.setCellFactory(param -> new HiddenCardListCell());
+            player2HandListView.setCellFactory(param -> new CardListCell());
             player2HandListView.getItems().setAll(player.getHand());
             player2HandListView.setDisable(player != currentPlayer);
             player1HandListView.setDisable(player == currentPlayer);

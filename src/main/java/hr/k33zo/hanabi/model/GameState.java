@@ -66,7 +66,7 @@ public class GameState {
         Player player = getCurrentPlayer();
         Card card = player.playCard(cardIndex);
         discardPile.add(card);
-        tips = Math.min(tips + 1, 8);
+        //tips = Math.min(tips + 1, 8);
     }
 
     public void giveTip() {

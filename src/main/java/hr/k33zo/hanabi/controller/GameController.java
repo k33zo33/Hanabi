@@ -5,10 +5,7 @@ import hr.k33zo.hanabi.model.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
 import java.util.ArrayList;
@@ -39,6 +36,10 @@ public class GameController {
     private Label remainingTipsLabel;
     @FXML
     private VBox tipsVBox;
+
+    @FXML Button giveTipCheckboxButton;
+
+
 
 
     private Integer selectedCardIndexPlayer1 = -1;
@@ -73,9 +74,11 @@ public class GameController {
             selectedCardIndexPlayer2 = player2HandListView.getSelectionModel().getSelectedIndex();
         });
 
+
         currentPlayer = gameState.getCurrentPlayer();
         fuseCounter = gameState.getFuses();
         tipCounter = gameState.getTips();
+        giveTipCheckboxButton.setVisible(false);
 
         updateLabels();
         //updatePlayerHandListView(0);
@@ -116,10 +119,13 @@ public class GameController {
         }
         handleDrawCard(event);
         updateLabels();
+        clearCardInfoLabel(gameState.getPlayers().indexOf(player), selectedCardIndex);
         gameState.nextPlayer();
         currentPlayer = gameState.getCurrentPlayer();
         updatePlayerHandListView(gameState.getPlayers().indexOf(player));
         updateDiscardPileListView();
+        clearCardInfoLabel(gameState.getPlayers().indexOf(player), selectedCardIndex);
+        checkIfGameWon();
         checkGameOver();
     }
 
@@ -145,6 +151,7 @@ public class GameController {
         }
         maxTipsWarning();
         updateLabels();
+        clearCardInfoLabel(gameState.getPlayers().indexOf(player), selectedCardIndex);
         gameState.nextPlayer();
         currentPlayer = gameState.getCurrentPlayer();
         updatePlayerHandListView(gameState.getPlayers().indexOf(player));
@@ -153,21 +160,43 @@ public class GameController {
 
     @FXML
     public void handleGiveTipButtonAction(ActionEvent event) {
- /*     Player currentPlayer = gameState.getCurrentPlayer();
-        Player otherPlayer = gameState.getPlayers().get(0) == currentPlayer ? gameState.getPlayers().get(1) : gameState.getPlayers().get(0);
-
-        Card cardToGiveTipAbout = otherPlayer.getHand().get(0);
-
-        giveTipAboutSuit(otherPlayer, cardToGiveTipAbout.getCardSuit());
-
-        updatePlayerHandListView(gameState.getPlayers().indexOf(otherPlayer));
-        gameState.giveTip();
-        updateLabels();*/
         Player otherPlayer = gameState.getPlayers().get(0) == currentPlayer ? gameState.getPlayers().get(1) : gameState.getPlayers().get(0);
         generatePossibleTips(otherPlayer);
+        giveTipCheckboxButton.setVisible(true);
         tipCounter--;
         updateLabels();
         checkTips();
+    }
+
+    public void  handleGiveTipCheckboxButton(ActionEvent event){
+        Player player = gameState.getCurrentPlayer();
+        String selectedTip = (String) giveTipCheckboxButton.getUserData();
+        if (selectedTip == null) {
+            return;
+        }
+
+        Player otherPlayer = gameState.getPlayers().get(0) == currentPlayer ? gameState.getPlayers().get(1) : gameState.getPlayers().get(0);
+        int otherPlayerIndex = gameState.getPlayers().indexOf(otherPlayer) + 1;
+
+        String indicesText = selectedTip.substring(selectedTip.lastIndexOf("indices") + 8, selectedTip.length() - 1);
+        String[] indicesArray = indicesText.split(", ");
+        for (String index : indicesArray) {
+            index = index.replace("[", "").replace("]", "");
+            int cardIndex = Integer.parseInt(index);
+            Label label = (Label) tipsVBox.getScene().lookup("#p" + otherPlayerIndex + "CardInfoLabel" + (cardIndex + 1));
+            if (selectedTip.contains("cards with number")) {
+                label.setText(label.getText() + " " + "This card is " + otherPlayer.getHand().get(cardIndex).getCadNumber());
+            } else {
+                label.setText(label.getText() + " " + "This card is " + otherPlayer.getHand().get(cardIndex).getCardSuit());
+            }
+        }
+        giveTipCheckboxButton.setUserData(null);
+        giveTipCheckboxButton.setVisible(false);
+        tipsVBox.setVisible(false);
+        updateLabels();
+        gameState.nextPlayer();
+        currentPlayer = gameState.getCurrentPlayer();
+        updatePlayerHandListView(gameState.getPlayers().indexOf(player));
     }
 
     private void giveTipAboutSuit(Player player, Suit suit) {
@@ -269,7 +298,6 @@ public class GameController {
 
         gameState = new GameState();
 
-        // UI
         player1HandListView.getItems().setAll(gameState.getPlayers().get(0).getHand());
         player2HandListView.getItems().setAll(gameState.getPlayers().get(1).getHand());
         discardPileListView.getItems().clear();
@@ -287,7 +315,6 @@ public class GameController {
         fuseCounter = gameState.getFuses();
         tipCounter = gameState.getTips();
 
-        // Update the labels
         updateLabels();
         updatePlayerHandListView(0);
     }
@@ -296,7 +323,6 @@ public class GameController {
         Map<Suit, List<Integer>> suitIndices = new HashMap<>();
         Map<Integer, List<Integer>> numberIndices = new HashMap<>();
 
-        // Initialize the maps
         for (Suit suit : Suit.values()) {
             suitIndices.put(suit, new ArrayList<>());
         }
@@ -330,6 +356,7 @@ public class GameController {
         }
 
         tipsVBox.getChildren().clear();
+        tipsVBox.setVisible(true);
         for (String tip : possibleTips) {
             CheckBox checkBox = new CheckBox(tip);
             checkBox.setOnAction(event -> {
@@ -342,18 +369,39 @@ public class GameController {
                     }
                     // Give the tip
                     //giveTip(checkBox.getText());
+                    giveTipCheckboxButton.setUserData(tip);
                 }
             });
             tipsVBox.getChildren().add(checkBox);
         }
-
-        // Display the tips
-        /*Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Possible Tips");
-        alert.setHeaderText(null);
-        alert.setContentText(String.join("\n", possibleTips));
-        alert.showAndWait();*/
     }
+
+    private void clearCardInfoLabel(int playerIndex, int cardIndex) {
+        Label label = (Label) tipsVBox.getScene().lookup("#p" + (playerIndex + 1) + "CardInfoLabel" + (cardIndex + 1));
+        label.setText("");
+    }
+
+    private void checkIfGameWon() {
+        boolean gameWon = true;
+        for (Map.Entry<Suit, Integer> entry : gameState.getFireworks().entrySet()) {
+            if (entry.getValue() != 5) {
+                gameWon = false;
+                break;
+            }
+        }
+        if (gameWon) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Game Won");
+            alert.setHeaderText(null);
+            alert.setContentText("Game Won");
+
+            alert.showAndWait();
+
+            resetGame();
+        }
+    }
+
+
 
     public  Player getCurrentPlayer() {
         return currentPlayer;

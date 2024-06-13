@@ -2,7 +2,9 @@ package hr.k33zo.hanabi.model;
 
 import hr.k33zo.hanabi.enums.Suit;
 
-public class Card {
+import java.io.Serializable;
+
+public class Card implements Serializable {
 
     private Suit cardSuit;
     private int cardNumber;

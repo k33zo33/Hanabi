@@ -2,11 +2,12 @@ package hr.k33zo.hanabi.model;
 
 import hr.k33zo.hanabi.enums.Suit;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Deck {
+public class Deck implements Serializable {
 
     private List<Card> cards;
 

@@ -1,7 +1,5 @@
 package hr.k33zo.hanabi;
 
-import hr.k33zo.hanabi.model.Deck;
-import hr.k33zo.hanabi.model.GameState;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;

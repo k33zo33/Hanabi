@@ -1,10 +1,12 @@
 package hr.k33zo.hanabi.controller;
 
+import hr.k33zo.hanabi.GameApplication;
 import hr.k33zo.hanabi.enums.Suit;
 import hr.k33zo.hanabi.model.*;
 import hr.k33zo.hanabi.utils.DocumentationUtils;
 import hr.k33zo.hanabi.utils.FileUtils;
 import hr.k33zo.hanabi.utils.GameStateUtils;
+import hr.k33zo.hanabi.utils.NetworkingUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -51,16 +53,14 @@ public class GameController {
     private Integer selectedCardIndexPlayer1 = -1;
     private Integer selectedCardIndexPlayer2 = -1;
     private Player currentPlayer;
-    private Integer fuseCounter;
-    private Integer tipCounter;
+    private Integer tips;
 
     private Deck deck;
     private List<Player> players;
     private int currentPlayerIndex;
     private Map<Suit, Integer> fireworks;
     private List<Card> discardPile;
-    private int fuses;
-    private int tips;
+    private Integer fuses;
 
 
     private GameState gameState;
@@ -107,12 +107,16 @@ public class GameController {
 
 
         currentPlayer = players.get(currentPlayerIndex);
-        fuseCounter = gameState.getFuses();
-        tipCounter = gameState.getTips();
+        fuses = gameState.getFuses();
+        tips = gameState.getTips();
         giveTipCheckboxButton.setVisible(false);
 
         updateLabels();
 
+    }
+
+    public void updateGameState(GameState gameState){
+          restoreGameState(gameState);
     }
 
     public void saveGame(){
@@ -122,9 +126,11 @@ public class GameController {
     public void loadGame(){
         GameState recoveredGameState = FileUtils.loadGameState();
         restoreGameState(recoveredGameState);
+        updateLabels();
+        //updateFireworksListView();
     }
-
     private void restoreGameState(GameState restoredGameState) {
+        // Restore the game state
         deck = restoredGameState.getDeck();
         players = restoredGameState.getPlayers();
         currentPlayerIndex = restoredGameState.getCurrentPlayerIndex();
@@ -133,6 +139,7 @@ public class GameController {
         fuses = restoredGameState.getFuses();
         tips = restoredGameState.getTips();
 
+        // Update the UI components
         player1HandListView.getItems().clear();
         player2HandListView.getItems().clear();
         discardPileListView.getItems().clear();
@@ -144,25 +151,43 @@ public class GameController {
 
         gameState = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips);
 
-
-
-        //dealInitialCards();
-
-        player1HandListView.setCellFactory(param -> new HiddenCardListCell());
-        player2HandListView.setCellFactory(param -> new CardListCell());
-        discardPileListView.setCellFactory(param -> new CardListCell());
-        blueFireworkListView.setCellFactory(param -> new CardListCell());
-        greenFireworkListView.setCellFactory(param -> new CardListCell());
-        redFireworkListView.setCellFactory(param -> new CardListCell());
-        yellowFireworkListView.setCellFactory(param -> new CardListCell());
-        whiteFireworkListView.setCellFactory(param -> new CardListCell());
-
+        // Update the player hands
         List<List<Card>> initialHands = new ArrayList<>();
         for (Player player : players) {
             initialHands.add(new ArrayList<>(player.getHand()));
         }
         player1HandListView.getItems().addAll(initialHands.get(0));
         player2HandListView.getItems().addAll(initialHands.get(1));
+
+        // Update the discard pile
+        discardPileListView.getItems().addAll(discardPile);
+
+        // Update the fireworks
+        for (Suit suit : Suit.values()) {
+            int highestValue = fireworks.getOrDefault(suit, 0);
+            for (int i = 1; i <= highestValue; i++) {
+                Card card = new Card(suit, i, true); // assuming the card's visibility should be true for fireworks
+                switch (suit) {
+                    case BLUE:
+                        blueFireworkListView.getItems().add(card);
+                        break;
+                    case GREEN:
+                        greenFireworkListView.getItems().add(card);
+                        break;
+                    case RED:
+                        redFireworkListView.getItems().add(card);
+                        break;
+                    case YELLOW:
+                        yellowFireworkListView.getItems().add(card);
+                        break;
+                    case WHITE:
+                        whiteFireworkListView.getItems().add(card);
+                        break;
+                }
+            }
+        }
+
+        // Update the selection models and listeners
         player1HandListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             selectedCardIndexPlayer1 = player1HandListView.getSelectionModel().getSelectedIndex();
         });
@@ -171,14 +196,13 @@ public class GameController {
         });
 
         currentPlayer = players.get(currentPlayerIndex);
-        fuseCounter = gameState.getFuses();
-        tipCounter = gameState.getTips();
+        fuses = gameState.getFuses();
+        tips = gameState.getTips();
         giveTipCheckboxButton.setVisible(false);
 
-
-        updateDiscardPileListView();
-        updatePlayerHandListView(currentPlayerIndex);
         updateLabels();
+        updatePlayerHandListView(0);
+        updatePlayerHandListView(1);
     }
 
     private void dealInitialCards() {
@@ -219,7 +243,14 @@ public class GameController {
         //tips = Math.min(tips + 1, 8);
     }
     public void nextPlayer() {
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+
+        if (currentPlayerIndex == 0) {
+            currentPlayerIndex = 1;
+        } else {
+            currentPlayerIndex = 0;
+        }
+
+        //currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
     }
 
     @FXML
@@ -243,18 +274,31 @@ public class GameController {
         } else {
             discardCard(gameState.getPlayers().indexOf(player), selectedCardIndex);
             updatePlayerHandListView(gameState.getPlayers().indexOf(player));
-            fuseCounter--;
+            fuses--;
         }
         handleDrawCard(event);
         updateLabels();
         clearCardInfoLabel(gameState.getPlayers().indexOf(player), selectedCardIndex);
         nextPlayer();
         currentPlayer = players.get(currentPlayerIndex);
+        RoleName roleName = GameApplication.loggedInRoleName;
+        //updatePlayerHandListView(roleName);
         updatePlayerHandListView(gameState.getPlayers().indexOf(player));
         updateDiscardPileListView();
         clearCardInfoLabel(gameState.getPlayers().indexOf(player), selectedCardIndex);
+
+        GameState gameStateToSend = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips);
+
+        if (roleName == RoleName.CLIENT){
+            NetworkingUtils.sendGameStateToServer(gameStateToSend);
+        }
+        else {
+            NetworkingUtils.sendGameStateToClient(gameStateToSend);
+        }
+
         checkIfGameWon();
         checkGameOver();
+
     }
 
     @FXML
@@ -274,8 +318,8 @@ public class GameController {
         } else {
             selectedCardIndexPlayer2 = -1;
         }
-        if (tipCounter < 8) {
-            tipCounter++;
+        if (tips < 8) {
+            tips++;
         }
         maxTipsWarning();
         updateLabels();
@@ -284,6 +328,10 @@ public class GameController {
         currentPlayer = players.get(currentPlayerIndex);
         updatePlayerHandListView(gameState.getPlayers().indexOf(player));
 
+
+        GameState gameStateToSend = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips);
+        NetworkingUtils.sendGameStateToServer(gameStateToSend);
+
     }
 
     @FXML
@@ -291,7 +339,7 @@ public class GameController {
         Player otherPlayer = gameState.getPlayers().get(0) == currentPlayer ? gameState.getPlayers().get(1) : gameState.getPlayers().get(0);
         generatePossibleTips(otherPlayer);
         giveTipCheckboxButton.setVisible(true);
-        tipCounter--;
+        tips--;
         updateLabels();
         checkTips();
     }
@@ -327,14 +375,6 @@ public class GameController {
         updatePlayerHandListView(gameState.getPlayers().indexOf(player));
     }
 
-//    private void giveTipAboutSuit(Player player, Suit suit) {
-//        for (Card card : player.getHand()) {
-//            if (card.getCardSuit() == suit) {
-//                card.setVisible(true);
-//            }
-//        }
-//    }
-
     private void updatePlayerHandListView(int playerIndex) {
         Player player = gameState.getPlayers().get(playerIndex);
         if (playerIndex == 0) {
@@ -351,6 +391,7 @@ public class GameController {
             player1HandListView.setDisable(player == currentPlayer);
         }
     }
+
 
     private void updateDiscardPileListView() {
         discardPileListView.getItems().setAll(gameState.getDiscardPile());
@@ -378,12 +419,12 @@ public class GameController {
     }
 
     private void updateLabels() {
-        remainingFusesLabel.setText(fuseCounter.toString());
-        remainingTipsLabel.setText(tipCounter.toString());
+        remainingFusesLabel.setText(gameState.getFuses().toString());
+        remainingTipsLabel.setText(gameState.getTips().toString());
     }
 
     public void checkGameOver() {
-        if (fuseCounter == 0) {
+        if (fuses == 0) {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Game Over");
             alert.setHeaderText(null);
@@ -396,7 +437,7 @@ public class GameController {
     }
 
     public void checkTips() {
-        if (tipCounter == 0) {
+        if (tips == 0) {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("No more tips!");
             alert.setHeaderText(null);
@@ -429,8 +470,8 @@ public class GameController {
 
         currentPlayer = players.get(currentPlayerIndex);
 
-        fuseCounter = gameState.getFuses();
-        tipCounter = gameState.getTips();
+        fuses = gameState.getFuses();
+        tips = gameState.getTips();
 
         updateLabels();
         updatePlayerHandListView(0);
@@ -515,7 +556,5 @@ public class GameController {
     public void saveDocumentation() throws IOException, ClassNotFoundException {
         DocumentationUtils.generateDocumentation();
     }
-
-
 
 }

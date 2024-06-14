@@ -12,12 +12,14 @@ public class GameState implements Serializable {
     private List<Player> players;
     private int currentPlayerIndex;
     private Map<Suit, Integer> fireworks;
+
+
     private List<Card> discardPile;
-    private int fuses;
-    private int tips;
+    private Integer fuses;
+    private Integer tips;
 
     public GameState(Deck deck, List<Player> players, int currentPlayerIndex, Map<Suit, Integer> fireworks,
-                     List<Card> discardPile, int fuses, int tips){
+                     List<Card> discardPile, Integer fuses, Integer tips){
         this.deck = deck;
         this.players = players;
         this.currentPlayerIndex = currentPlayerIndex;
@@ -69,7 +71,7 @@ public class GameState implements Serializable {
         this.discardPile = discardPile;
     }
 
-    public int getFuses() {
+    public Integer getFuses() {
         return fuses;
     }
 
@@ -77,7 +79,7 @@ public class GameState implements Serializable {
         this.fuses = fuses;
     }
 
-    public int getTips() {
+    public Integer getTips() {
         return tips;
     }
 

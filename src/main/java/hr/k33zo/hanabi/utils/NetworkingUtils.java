@@ -1,6 +1,8 @@
 package hr.k33zo.hanabi.utils;
 
 import hr.k33zo.hanabi.model.GameState;
+import hr.k33zo.hanabi.model.NetworkConfiguration;
+
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -9,28 +11,20 @@ import java.net.Socket;
 
 public class NetworkingUtils {
     public static void sendGameStateToServer(GameState gameState){
-        String hostname = ConfigurationReader.getInstance().readStringValueForKey(ConfigurationKey.HOST);
-        try (Socket clientSocket = new Socket(
-                hostname,
-                ConfigurationReader.getInstance().readIntegerValueForKey(ConfigurationKey.SERVER_PORT))){
-            System.err.println("Client is connecting to " + clientSocket.getInetAddress() + ":" +clientSocket.getPort());
+        try (Socket clientSocket = new Socket(NetworkConfiguration.HOST, NetworkConfiguration.SERVER_PORT)){
+            System.err.printf("Client is connecting to %s:%d%n", clientSocket.getInetAddress(), clientSocket.getPort());
 
             sendSerializableRequest(clientSocket, gameState);
-
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
 
     public static void sendGameStateToClient(GameState gameState){
-        String hostname = ConfigurationReader.getInstance().readStringValueForKey(ConfigurationKey.HOST);
-        try (Socket clientSocket = new Socket(
-                hostname,
-                ConfigurationReader.getInstance().readIntegerValueForKey(ConfigurationKey.CLIENT_PORT))){
-            System.err.println("Client is connecting to " + clientSocket.getInetAddress() + ":" +clientSocket.getPort());
+        try (Socket clientSocket = new Socket(NetworkConfiguration.HOST, NetworkConfiguration.CLIENT_PORT)){
+            System.err.printf("Client is connecting to %s:%d%n", clientSocket.getInetAddress(), clientSocket.getPort());
 
             sendSerializableRequest(clientSocket, gameState);
-
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }

@@ -2,6 +2,7 @@ package hr.k33zo.hanabi.controller;
 
 import hr.k33zo.hanabi.enums.Suit;
 import hr.k33zo.hanabi.model.*;
+import hr.k33zo.hanabi.utils.DocumentationUtils;
 import hr.k33zo.hanabi.utils.FileUtils;
 import hr.k33zo.hanabi.utils.GameStateUtils;
 import javafx.event.ActionEvent;
@@ -10,6 +11,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -63,9 +65,6 @@ public class GameController {
 
     private GameState gameState;
 
-//   public GameController() {
-//        this.gameState = new GameState();
-//    }
 
     public void initialize() {
         deck = new Deck();
@@ -511,6 +510,10 @@ public class GameController {
             alert.showAndWait();
             resetGame();
         }
+    }
+
+    public void saveDocumentation() throws IOException, ClassNotFoundException {
+        DocumentationUtils.generateDocumentation();
     }
 
 

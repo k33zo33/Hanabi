@@ -7,10 +7,12 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox alignment="CENTER" prefHeight="750.0" prefWidth="1200.0" spacing="20.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hr.k33zo.hanabi.controller.GameController">
+<VBox alignment="CENTER" prefHeight="752.0" prefWidth="1319.0" spacing="20.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hr.k33zo.hanabi.controller.GameController">
   <padding>
     <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
   </padding>
@@ -38,24 +40,24 @@
           </Menu>
         </menus>
       </MenuBar>
-      <AnchorPane prefHeight="774.0" prefWidth="1160.0">
+      <AnchorPane prefHeight="667.0" prefWidth="1336.0">
          <children>
             <ListView fx:id="player1HandListView" layoutX="295.0" layoutY="513.0" prefHeight="154.0" prefWidth="522.0" style="-fx-background-color: lightblue;" />
             <ListView fx:id="player2HandListView" layoutX="284.0" layoutY="7.0" prefHeight="154.0" prefWidth="522.0" style="-fx-background-color: lightblue;" />
-            <ListView fx:id="discardPileListView" layoutX="102.0" layoutY="437.0" prefHeight="212.0" prefWidth="133.0" />
+            <ListView fx:id="discardPileListView" layoutX="111.0" layoutY="450.0" prefHeight="212.0" prefWidth="133.0" />
             <Button fx:id="playCardButton" layoutX="7.0" layoutY="517.0" mnemonicParsing="false" onAction="#handlePlayCardButtonAction" text="Play card" />
             <Button fx:id="discardButton" layoutX="10.0" layoutY="556.0" mnemonicParsing="false" onAction="#handleDiscardCardButtonAction" text="Discard " />
             <Button fx:id="giveTipButton" layoutX="10.0" layoutY="590.0" mnemonicParsing="false" onAction="#handleGiveTipButtonAction" text="Give Tip" />
-            <ListView fx:id="blueFireworkListView" layoutX="449.0" layoutY="233.0" prefHeight="200.0" prefWidth="133.0" />
-            <ListView fx:id="greenFireworkListView" layoutX="582.0" layoutY="233.0" prefHeight="200.0" prefWidth="133.0" />
-            <ListView fx:id="redFireworkListView" layoutX="715.0" layoutY="233.0" prefHeight="200.0" prefWidth="133.0" />
-            <ListView fx:id="yellowFireworkListView" layoutX="848.0" layoutY="233.0" prefHeight="200.0" prefWidth="133.0" />
-            <ListView fx:id="whiteFireworkListView" layoutX="981.0" layoutY="233.0" prefHeight="200.0" prefWidth="133.0" />
+            <ListView fx:id="blueFireworkListView" layoutX="372.0" layoutY="248.0" prefHeight="200.0" prefWidth="133.0" />
+            <ListView fx:id="greenFireworkListView" layoutX="505.0" layoutY="248.0" prefHeight="200.0" prefWidth="133.0" />
+            <ListView fx:id="redFireworkListView" layoutX="638.0" layoutY="248.0" prefHeight="200.0" prefWidth="133.0" />
+            <ListView fx:id="yellowFireworkListView" layoutX="771.0" layoutY="248.0" prefHeight="200.0" prefWidth="133.0" />
+            <ListView fx:id="whiteFireworkListView" layoutX="904.0" layoutY="248.0" prefHeight="200.0" prefWidth="133.0" />
             <Label fx:id="fusesLabel" layoutX="96.0" layoutY="47.0" text="Fuses" />
             <Label fx:id="tipsLabel" layoutX="146.0" layoutY="47.0" text="Tips" />
             <Label fx:id="remainingFusesLabel" layoutX="97.0" layoutY="71.0" />
             <Label fx:id="remainingTipsLabel" layoutX="143.0" layoutY="71.0" />
-            <VBox fx:id="tipsVBox" layoutX="20.0" layoutY="233.0" prefHeight="146.0" prefWidth="373.0" />
+            <VBox fx:id="tipsVBox" layoutX="14.0" layoutY="267.0" prefHeight="146.0" prefWidth="352.0" />
             <Label fx:id="p1CardInfoLabel1" layoutX="822.0" layoutY="517.0" prefHeight="17.0" prefWidth="318.0" />
             <Label fx:id="p1CardInfoLabel2" layoutX="822.0" layoutY="535.0" prefHeight="17.0" prefWidth="318.0" />
             <Label fx:id="p1CardInfoLabel3" layoutX="822.0" layoutY="560.0" prefHeight="17.0" prefWidth="318.0" />
@@ -66,12 +68,15 @@
             <Label fx:id="p2CardInfoLabel3" layoutX="810.0" layoutY="59.0" />
             <Label fx:id="p2CardInfoLabel4" layoutX="810.0" layoutY="83.0" />
             <Label fx:id="p2CardInfoLabel5" layoutX="810.0" layoutY="107.0" />
-            <Button fx:id="giveTipCheckboxButton" layoutX="168.0" layoutY="393.0" mnemonicParsing="false" onAction="#handleGiveTipCheckboxButton" text="Tip!" />
-            <Label layoutX="496.0" layoutY="204.0" prefHeight="17.0" prefWidth="49.0" text="BLUE" textFill="#001aff" />
-            <Label layoutX="632.0" layoutY="204.0" prefHeight="17.0" prefWidth="49.0" text="GREEN" textFill="#0dff00" />
-            <Label layoutX="768.0" layoutY="204.0" prefHeight="17.0" prefWidth="49.0" text="RED" textFill="#f80000" />
-            <Label layoutX="890.0" layoutY="204.0" prefHeight="17.0" prefWidth="49.0" text="YELLOW" textFill="#a7ae1c" />
-            <Label layoutX="1023.0" layoutY="204.0" prefHeight="17.0" prefWidth="49.0" text="WHITE" textFill="#bcb3b3" />
+            <Button fx:id="giveTipCheckboxButton" layoutX="183.0" layoutY="421.0" mnemonicParsing="false" onAction="#handleGiveTipCheckboxButton" text="Tip!" />
+            <Label layoutX="419.0" layoutY="219.0" prefHeight="17.0" prefWidth="49.0" text="BLUE" textFill="#001aff" />
+            <Label layoutX="555.0" layoutY="219.0" prefHeight="17.0" prefWidth="49.0" text="GREEN" textFill="#0dff00" />
+            <Label layoutX="691.0" layoutY="219.0" prefHeight="17.0" prefWidth="49.0" text="RED" textFill="#f80000" />
+            <Label layoutX="813.0" layoutY="219.0" prefHeight="17.0" prefWidth="49.0" text="YELLOW" textFill="#a7ae1c" />
+            <Label layoutX="946.0" layoutY="219.0" prefHeight="17.0" prefWidth="49.0" text="WHITE" textFill="#bcb3b3" />
+            <TextArea fx:id="chatTextArea" layoutX="1053.0" layoutY="15.0" prefHeight="388.0" prefWidth="219.0" />
+            <TextField fx:id="messageTextField" layoutX="1053.0" layoutY="409.0" />
+            <Button fx:id="sendButton" onAction="#handleSendButtonAction" layoutX="1213.0" layoutY="409.0" mnemonicParsing="false" text="Send" />
          </children></AnchorPane>
 
    </children>

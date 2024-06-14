@@ -1,10 +1,11 @@
 package hr.k33zo.hanabi;
 
+import hr.k33zo.hanabi.chat.service.RemoteChatService;
+import hr.k33zo.hanabi.chat.service.RemoteChatServiceImpl;
 import hr.k33zo.hanabi.controller.GameController;
 import hr.k33zo.hanabi.model.GameState;
+import hr.k33zo.hanabi.model.NetworkConfiguration;
 import hr.k33zo.hanabi.model.RoleName;
-import hr.k33zo.hanabi.networking.Country;
-import hr.k33zo.hanabi.networking.Server;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -14,19 +15,24 @@ import javafx.stage.Stage;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 
-import static hr.k33zo.hanabi.model.NetworkConfiguration.CLIENT_PORT;
-import static hr.k33zo.hanabi.model.NetworkConfiguration.SERVER_PORT;
+import static hr.k33zo.hanabi.model.NetworkConfiguration.*;
 
 public class GameApplication extends Application {
 
     public static RoleName loggedInRoleName;
     public static GameController gameController;
+    public static RemoteChatService remoteChatService = null;
 
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(GameApplication.class.getResource("game-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 1200, 750);
+        Scene scene = new Scene(fxmlLoader.load(), 1300, 750);
         gameController = fxmlLoader.getController();
         stage.setTitle(loggedInRoleName.name());
         stage.setScene(scene);
@@ -46,6 +52,7 @@ public class GameApplication extends Application {
         new Thread(Application::launch).start();
 
         if (loggedInRoleName == RoleName.SERVER) {
+            startRmiChatServer();
             acceptRequestsAsServer();
         }
         else if(loggedInRoleName == RoleName.CLIENT){
@@ -53,6 +60,9 @@ public class GameApplication extends Application {
         }
 
     }
+
+
+
 
     private static void acceptRequestsAsServer() {
         try (ServerSocket serverSocket = new ServerSocket(SERVER_PORT)){
@@ -97,27 +107,26 @@ public class GameApplication extends Application {
             e.printStackTrace();
         }
     }
-//
-//    private static void sendRequest() {
-//        try (Socket clientSocket = new Socket(Server.HOST, Server.PORT)){
-//            System.err.printf("Client is connecting to %s:%d%n", clientSocket.getInetAddress(), clientSocket.getPort());
-//
-//            //sendPrimitiveRequest(clientSocket);
-//            sendSerializableRequest(clientSocket);
-//        } catch (IOException | ClassNotFoundException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private static void sendSerializableRequest(Socket client) throws IOException, ClassNotFoundException {
-//        ObjectOutputStream oos = new ObjectOutputStream(client.getOutputStream());
-//        ObjectInputStream ois = new ObjectInputStream(client.getInputStream());
-//        oos.writeObject(new Country("Croatia", 1));
-//        System.out.printf("Moved to: %s%n", ois.readObject());
-//    }
 
+    private static void startRmiChatServer(){
+        try {
+            Registry registry = LocateRegistry.createRegistry(NetworkConfiguration.RMI_PORT);
+            remoteChatService = new RemoteChatServiceImpl();
+            RemoteChatService skeleton = (RemoteChatService) UnicastRemoteObject.exportObject(remoteChatService, NetworkConfiguration.RANDOM_PORT_HINT);
+            registry.rebind(RemoteChatService.REMOTE_CHAT_OBJECT_NAME, skeleton);
+            System.err.println("Object registered in RMI registry");
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
 
-
-
+    public static void startRmiRemoteChatClient(){
+        try {
+            Registry registry = LocateRegistry.getRegistry(HOST, RMI_PORT);
+            RemoteChatService stub = (RemoteChatService) registry.lookup(RemoteChatService.REMOTE_CHAT_OBJECT_NAME);
+        } catch (RemoteException | NotBoundException e) {
+            e.printStackTrace();
+        }
+    }
 
 }

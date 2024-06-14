@@ -14,6 +14,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +44,12 @@ public class GameController {
     private Label remainingTipsLabel;
     @FXML
     private VBox tipsVBox;
+    @FXML
+    private Button sendButton;
+    @FXML
+    private TextArea chatTextArea;
+    @FXML
+    private TextField chatTextField;
 
     @FXML
     Button giveTipCheckboxButton;
@@ -344,6 +351,16 @@ public class GameController {
         checkTips();
     }
 
+    @FXML
+    public void handleSendButtonAction(ActionEvent event) {
+        String message = chatTextField.getText();
+        try {
+            GameApplication.remoteChatService.sendMessage(message);
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void  handleGiveTipCheckboxButton(ActionEvent event){
         Player player = players.get(currentPlayerIndex);
         String selectedTip = (String) giveTipCheckboxButton.getUserData();
@@ -391,6 +408,7 @@ public class GameController {
             player1HandListView.setDisable(player == currentPlayer);
         }
     }
+
 
 
     private void updateDiscardPileListView() {

@@ -3,6 +3,8 @@ package hr.k33zo.hanabi.controller;
 import hr.k33zo.hanabi.GameApplication;
 import hr.k33zo.hanabi.enums.Suit;
 import hr.k33zo.hanabi.model.*;
+import hr.k33zo.hanabi.thread.GetLastMoveThread;
+import hr.k33zo.hanabi.thread.SaveGameMoveThread;
 import hr.k33zo.hanabi.utils.DocumentationUtils;
 import hr.k33zo.hanabi.utils.FileUtils;
 import hr.k33zo.hanabi.utils.GameStateUtils;
@@ -19,6 +21,7 @@ import javafx.util.Duration;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -56,29 +59,22 @@ public class GameController {
     private TextArea chatTextArea;
     @FXML
     private TextField messageTextField;
-
     @FXML
     Button giveTipCheckboxButton;
-
-
-
-
+    @FXML
+    Label lastGameMoveLabel;
     private Integer selectedCardIndexPlayer1 = -1;
     private Integer selectedCardIndexPlayer2 = -1;
     private Player currentPlayer;
     private Integer tips;
-
     private Deck deck;
     private List<Player> players;
     private int currentPlayerIndex;
     private Map<Suit, Integer> fireworks;
     private List<Card> discardPile;
     private Integer fuses;
-
     private List<String> player1HandTips;
     private List<String> player2HandTips;
-
-
     private GameState gameState;
 
 
@@ -141,10 +137,6 @@ public class GameController {
             player2HandListView.setDisable(true);
         }
 
-
-
-
-
         discardPileListView.setCellFactory(param -> new CardListCell());
         blueFireworkListView.setCellFactory(param -> new CardListCell());
         greenFireworkListView.setCellFactory(param -> new CardListCell());
@@ -165,6 +157,10 @@ public class GameController {
             selectedCardIndexPlayer2 = player2HandListView.getSelectionModel().getSelectedIndex();
         });
 
+        GetLastMoveThread getLastMoveThread = new GetLastMoveThread(lastGameMoveLabel);
+        Thread threadStarter = new Thread(getLastMoveThread);
+        threadStarter.start();
+
 
         currentPlayer = players.get(currentPlayerIndex);
         fuses = gameState.getFuses();
@@ -177,8 +173,6 @@ public class GameController {
 
     public void updateGameState(GameState gameState){
           restoreGameState(gameState);
-
-
     }
 
     public void saveGame(){
@@ -189,10 +183,8 @@ public class GameController {
         GameState recoveredGameState = FileUtils.loadGameState();
         restoreGameState(recoveredGameState);
         updateLabels();
-        //updateFireworksListView();
     }
     private void restoreGameState(GameState restoredGameState) {
-        // Restore the game state
         deck = restoredGameState.getDeck();
         players = restoredGameState.getPlayers();
         currentPlayerIndex = restoredGameState.getCurrentPlayerIndex();
@@ -203,7 +195,6 @@ public class GameController {
         player1HandTips = restoredGameState.getPlayer1HandTips();
         player2HandTips = restoredGameState.getPlayer2HandTips();
 
-        // Update the UI components
         player1HandListView.getItems().clear();
         player2HandListView.getItems().clear();
         discardPileListView.getItems().clear();
@@ -215,7 +206,6 @@ public class GameController {
 
         gameState = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips, player1HandTips, player2HandTips);
 
-        // Update the player hands
         List<List<Card>> initialHands = new ArrayList<>();
         for (Player player : players) {
             initialHands.add(new ArrayList<>(player.getHand()));
@@ -223,10 +213,8 @@ public class GameController {
         player1HandListView.getItems().addAll(initialHands.get(0));
         player2HandListView.getItems().addAll(initialHands.get(1));
 
-        // Update the discard pile
         discardPileListView.getItems().addAll(discardPile);
 
-        // Update the fireworks
         for (Suit suit : Suit.values()) {
             int highestValue = fireworks.getOrDefault(suit, 0);
             for (int i = 1; i <= highestValue; i++) {
@@ -251,7 +239,6 @@ public class GameController {
             }
         }
 
-        // Update the selection models and listeners
         player1HandListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             selectedCardIndexPlayer1 = player1HandListView.getSelectionModel().getSelectedIndex();
         });
@@ -267,6 +254,8 @@ public class GameController {
         updatePlayerHandLabels(0, player1HandTips);
         updatePlayerHandLabels(1, player2HandTips);
 
+
+
         updateLabels();
         updatePlayerHandListView(0);
         updatePlayerHandListView(1);
@@ -278,7 +267,7 @@ public class GameController {
         for (int i = 0; i < 5; i++) {
             for (Player player : players) {
                 Card card = deck.dealCard();
-                card.setOwner(player); // Set the owner of the card
+                card.setOwner(player);
                 player.drawCard(card);
             }
         }
@@ -309,17 +298,13 @@ public class GameController {
         Player player = players.get(currentPlayerIndex);
         Card card = player.playCard(cardIndex);
         discardPile.add(card);
-        //tips = Math.min(tips + 1, 8);
     }
     public void nextPlayer() {
-
         if (currentPlayerIndex == 0) {
             currentPlayerIndex = 1;
         } else {
             currentPlayerIndex = 0;
         }
-
-        //currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
     }
 
     @FXML
@@ -348,10 +333,17 @@ public class GameController {
         handleDrawCard(event);
         updateLabels();
         clearCardInfoLabel(gameState.getPlayers().indexOf(player), selectedCardIndex);
+
+        LocalDateTime dateTime = LocalDateTime.now();
+        SaveGameMoveThread saveGameMoveThread = new SaveGameMoveThread(new GameMove(currentPlayerIndex,
+                MoveType.PLAY, dateTime, selectedCardIndex, null, null, card.getCardSuit().toString()));
+
+        Thread threadStarter = new Thread(saveGameMoveThread);
+        threadStarter.start();
+
         nextPlayer();
         currentPlayer = players.get(currentPlayerIndex);
         RoleName roleName = GameApplication.loggedInRoleName;
-        //updatePlayerHandListView(roleName);
         updatePlayerHandListView(gameState.getPlayers().indexOf(player));
         updateDiscardPileListView();
         clearCardInfoLabel(gameState.getPlayers().indexOf(player), selectedCardIndex);
@@ -394,13 +386,17 @@ public class GameController {
         updateLabels();
         clearCardInfoLabel(gameState.getPlayers().indexOf(player), selectedCardIndex);
         RoleName roleName = GameApplication.loggedInRoleName;
+        LocalDateTime dateTime = LocalDateTime.now();
+        SaveGameMoveThread saveGameMoveThread = new SaveGameMoveThread(new GameMove(currentPlayerIndex,
+                MoveType.DISCARD, dateTime, selectedCardIndex, null, null, card.getCardSuit().toString()));
+
+        Thread threadStarter = new Thread(saveGameMoveThread);
+        threadStarter.start();
         nextPlayer();
         currentPlayer = players.get(currentPlayerIndex);
         updatePlayerHandListView(gameState.getPlayers().indexOf(player));
 
-
         GameState gameStateToSend = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips, player1HandTips, player2HandTips);
-
 
         if (roleName == RoleName.CLIENT){
             NetworkingUtils.sendGameStateToServer(gameStateToSend);
@@ -433,7 +429,6 @@ public class GameController {
             for(String chatMessage : chatMessages){
                 chatTextArea.appendText(chatMessage + "\n");
             }
-
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
@@ -446,15 +441,12 @@ public class GameController {
             return;
         }
 
-        // Determine the other player
         Player otherPlayer = (gameState.getPlayers().get(0) == currentPlayer) ? gameState.getPlayers().get(1) : gameState.getPlayers().get(0);
 
-        // Extract indices from the selected tip
         String indicesText = selectedTip.substring(selectedTip.lastIndexOf("indices") + 8, selectedTip.length() - 1);
         String[] indicesArray = indicesText.split(", ");
         List<String> tipsList = new ArrayList<>();
 
-        // Generate tips based on the selected tip
         for (String index : indicesArray) {
             index = index.replace("[", "").replace("]", "");
             int cardIndex = Integer.parseInt(index);
@@ -465,7 +457,6 @@ public class GameController {
             }
         }
 
-        // Update the appropriate player's tips list
         if (currentPlayer == gameState.getPlayers().get(0)) {
             player1HandTips.clear();
             player1HandTips.addAll(tipsList);
@@ -474,11 +465,12 @@ public class GameController {
             player2HandTips.addAll(tipsList);
         }
 
-         //Set labels for the other player's hand based on the tips
+        String tip = null;
+        int cardIndex = 0;
         int otherPlayerIndex = gameState.getPlayers().indexOf(otherPlayer) + 1;
         for (int i = 0; i < tipsList.size(); i++) {
-            String tip = tipsList.get(i);
-            int cardIndex = Integer.parseInt(indicesArray[i].replaceAll("[\\[\\]]", ""));
+            tip = tipsList.get(i);
+            cardIndex = Integer.parseInt(indicesArray[i].replaceAll("[\\[\\]]", ""));
             Label label = (Label) tipsVBox.getScene().lookup("#p" + otherPlayerIndex + "CardInfoLabel" + (cardIndex + 1));
             label.setText(label.getText() + " " + tip);
         }
@@ -489,6 +481,14 @@ public class GameController {
 
         RoleName roleName = GameApplication.loggedInRoleName;
         updateLabels();
+
+        LocalDateTime dateTime = LocalDateTime.now();
+        SaveGameMoveThread saveGameMoveThread = new SaveGameMoveThread(new GameMove(currentPlayerIndex,
+                        MoveType.GIVE_HINT, dateTime, cardIndex, tip, tipsList, null));
+
+        Thread threadStarter = new Thread(saveGameMoveThread);
+        threadStarter.start();
+
         nextPlayer();
         currentPlayer = players.get(currentPlayerIndex);
         updatePlayerHandListView(gameState.getPlayers().indexOf(currentPlayer));
@@ -522,17 +522,9 @@ public class GameController {
             }
         } else {
             if (playerIndex == 0) {
-                //player1HandListView.setCellFactory(param -> new CardListCell());
-                //player2HandListView.setCellFactory(param -> new HiddenCardListCell());
                 player1HandListView.getItems().setAll(player.getHand());
-                //player1HandListView.setDisable(player != currentPlayer);
-                //player2HandListView.setDisable(player == currentPlayer);
             } else {
-                //player1HandListView.setCellFactory(param -> new HiddenCardListCell());
-                //player2HandListView.setCellFactory(param -> new CardListCell());
                 player2HandListView.getItems().setAll(player.getHand());
-                //player2HandListView.setDisable(player != currentPlayer);
-                //player1HandListView.setDisable(player == currentPlayer);
             }
         }
     }
@@ -575,9 +567,7 @@ public class GameController {
             alert.setTitle("Game Over");
             alert.setHeaderText(null);
             alert.setContentText("Game Over");
-
             alert.showAndWait();
-
             resetGame();
         }
     }
@@ -610,15 +600,11 @@ public class GameController {
         redFireworkListView.getItems().clear();
         yellowFireworkListView.getItems().clear();
         whiteFireworkListView.getItems().clear();
-
         selectedCardIndexPlayer1 = -1;
         selectedCardIndexPlayer2 = -1;
-
         currentPlayer = players.get(currentPlayerIndex);
-
         fuses = gameState.getFuses();
         tips = gameState.getTips();
-
         updateLabels();
         updatePlayerHandListView(0);
     }
@@ -671,7 +657,6 @@ public class GameController {
             CheckBox checkBox = new CheckBox(tip);
             checkBox.setOnAction(event -> {
                 if (checkBox.isSelected()) {
-                    // Uncheck all other CheckBoxes
                     for (Node node : tipsVBox.getChildren()) {
                         if (node instanceof CheckBox && node != checkBox) {
                             ((CheckBox) node).setSelected(false);
@@ -715,18 +700,16 @@ public class GameController {
     private void updatePlayerHandLabels(int playerIndex, List<String> tipsList) {
         RoleName roleName = GameApplication.loggedInRoleName;
 
-        // Clear all labels in tipsVBox
         for (Node node : tipsVBox.getChildren()) {
             if (node instanceof Label) {
                 ((Label) node).setText("");
             }
         }
 
-        // Update labels for the appropriate player's tips
         if (roleName == RoleName.SERVER && playerIndex == 1) {
             for (int i = 0; i < tipsList.size(); i++) {
                 String tip = tipsList.get(i);
-                String labelId = "#p1CardInfoLabel" + (i + 1); // Assuming labels are named like p1CardInfoLabel1, p1CardInfoLabel2, etc.
+                String labelId = "#p1CardInfoLabel" + (i + 1);
                 Label label = (Label) tipsVBox.getScene().lookup(labelId);
                 if (label != null) {
                     label.setText(tip);
@@ -737,7 +720,7 @@ public class GameController {
         } else if (roleName == RoleName.CLIENT && playerIndex == 0) {
             for (int i = 0; i < tipsList.size(); i++) {
                 String tip = tipsList.get(i);
-                String labelId = "#p2CardInfoLabel" + (i + 1); // Assuming labels are named like p2CardInfoLabel1, p2CardInfoLabel2, etc.
+                String labelId = "#p2CardInfoLabel" + (i + 1);
                 Label label = (Label) tipsVBox.getScene().lookup(labelId);
                 if (label != null) {
                     label.setText(tip);
@@ -747,8 +730,4 @@ public class GameController {
             }
         }
     }
-
-
-
-
 }

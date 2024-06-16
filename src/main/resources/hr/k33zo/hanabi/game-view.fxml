@@ -74,9 +74,10 @@
             <Label layoutX="691.0" layoutY="219.0" prefHeight="17.0" prefWidth="49.0" text="RED" textFill="#f80000" />
             <Label layoutX="813.0" layoutY="219.0" prefHeight="17.0" prefWidth="49.0" text="YELLOW" textFill="#a7ae1c" />
             <Label layoutX="946.0" layoutY="219.0" prefHeight="17.0" prefWidth="49.0" text="WHITE" textFill="#bcb3b3" />
-            <TextArea fx:id="chatTextArea" layoutX="1053.0" layoutY="15.0" prefHeight="388.0" prefWidth="219.0" />
-            <TextField fx:id="messageTextField" layoutX="1053.0" layoutY="409.0" />
-            <Button fx:id="sendButton" onAction="#handleSendButtonAction" layoutX="1213.0" layoutY="409.0" mnemonicParsing="false" text="Send" />
+            <TextArea fx:id="chatTextArea" layoutX="1053.0" layoutY="15.0" prefHeight="257.0" prefWidth="219.0" />
+            <TextField fx:id="messageTextField" layoutX="1053.0" layoutY="283.0" />
+            <Button fx:id="sendButton" layoutX="1210.0" layoutY="283.0" mnemonicParsing="false" onAction="#handleSendButtonAction" text="Send" />
+            <Label fx:id="lastGameMoveLabel" layoutX="256.0" layoutY="461.0" prefHeight="25.0" prefWidth="1012.0" text="Last game move" />
          </children></AnchorPane>
 
    </children>

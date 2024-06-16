@@ -62,8 +62,6 @@ public class GameApplication extends Application {
     }
 
 
-
-
     private static void acceptRequestsAsServer() {
         Integer serverPort = ConfigurationReader.getInstance().readIntegerValueForKey(ConfigurationKey.SERVER_PORT);
         try (ServerSocket serverSocket = new ServerSocket(serverPort)){

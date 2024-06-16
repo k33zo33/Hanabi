@@ -43,8 +43,10 @@ public class DocumentationUtils {
                 htmlHeader += "<h2>" + deserializedClass.getName() + "</h2>";
 
                 Field[] fields = deserializedClass.getDeclaredFields();
+//                htmlHeader += "<h2>Fields</h2>";
 
                 for(Field field : fields) {
+
                     int modifiers = field.getModifiers();
 
                     if(Modifier.isPublic(modifiers)) {

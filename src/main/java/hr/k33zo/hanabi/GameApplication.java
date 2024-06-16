@@ -27,7 +27,7 @@ public class GameApplication extends Application {
 
     public static RoleName loggedInRoleName;
     public static GameController gameController;
-    public static RemoteChatService remoteChatService = null;
+    public static RemoteChatService remoteChatService;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -56,7 +56,9 @@ public class GameApplication extends Application {
             acceptRequestsAsServer();
         }
         else if(loggedInRoleName == RoleName.CLIENT){
+            startRmiRemoteChatClient();
             acceptRequestsAsClient();
+
         }
 
     }
@@ -123,7 +125,7 @@ public class GameApplication extends Application {
     public static void startRmiRemoteChatClient(){
         try {
             Registry registry = LocateRegistry.getRegistry(HOST, RMI_PORT);
-            RemoteChatService stub = (RemoteChatService) registry.lookup(RemoteChatService.REMOTE_CHAT_OBJECT_NAME);
+            remoteChatService = (RemoteChatService) registry.lookup(RemoteChatService.REMOTE_CHAT_OBJECT_NAME);
         } catch (RemoteException | NotBoundException e) {
             e.printStackTrace();
         }

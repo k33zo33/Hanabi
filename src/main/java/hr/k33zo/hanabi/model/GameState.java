@@ -12,11 +12,12 @@ public class GameState implements Serializable {
     private List<Player> players;
     private int currentPlayerIndex;
     private Map<Suit, Integer> fireworks;
-
-
     private List<Card> discardPile;
     private Integer fuses;
     private Integer tips;
+
+    private List<String> player1HandTips;
+    private List<String> player2HandTips;
 
     public GameState(Deck deck, List<Player> players, int currentPlayerIndex, Map<Suit, Integer> fireworks,
                      List<Card> discardPile, Integer fuses, Integer tips){

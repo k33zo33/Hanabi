@@ -6,7 +6,7 @@ import java.util.List;
 
 public class RemoteChatServiceImpl implements RemoteChatService{
 
-    private List<String> chatMessages;
+    private final List<String> chatMessages;
 
     public RemoteChatServiceImpl(){
         chatMessages = new ArrayList<>();

@@ -7,11 +7,15 @@ import hr.k33zo.hanabi.utils.DocumentationUtils;
 import hr.k33zo.hanabi.utils.FileUtils;
 import hr.k33zo.hanabi.utils.GameStateUtils;
 import hr.k33zo.hanabi.utils.NetworkingUtils;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -19,6 +23,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static hr.k33zo.hanabi.GameApplication.remoteChatService;
 
 public class GameController {
 
@@ -49,7 +55,7 @@ public class GameController {
     @FXML
     private TextArea chatTextArea;
     @FXML
-    private TextField chatTextField;
+    private TextField messageTextField;
 
     @FXML
     Button giveTipCheckboxButton;
@@ -89,9 +95,43 @@ public class GameController {
         tips = 8;
         gameState = new GameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips);
         dealInitialCards();
+        chatTextArea.setDisable(true);
 
-        player1HandListView.setCellFactory(param -> new HiddenCardListCell());
-        player2HandListView.setCellFactory(param -> new CardListCell());
+        if (GameApplication.loggedInRoleName != RoleName.SINGLE_PLAYER){
+            final Timeline timeline = new Timeline(
+                    new KeyFrame(
+                            Duration.millis(1000),
+                            event -> {
+                                List<String> chatMessages = null;
+                                try {
+                                    chatMessages = remoteChatService.getAllChatMessages();
+                                } catch (RemoteException e) {
+                                    throw new RuntimeException(e);
+                                }
+
+                                chatTextArea.clear();
+                                for (String chatMessage : chatMessages) {
+                                    chatTextArea.appendText(chatMessage + "\n");
+                                }
+                            }
+                    )
+            );
+            timeline.setCycleCount(Animation.INDEFINITE);
+            timeline.play();
+        }
+
+        if (GameApplication.loggedInRoleName == RoleName.SERVER){
+            player1HandListView.setCellFactory(param -> new HiddenCardListCell());
+            player2HandListView.setCellFactory(param -> new CardListCell());
+            player2HandListView.setDisable(true);
+        }
+        else if (GameApplication.loggedInRoleName == RoleName.CLIENT) {
+            player1HandListView.setCellFactory(param -> new CardListCell());
+            player2HandListView.setCellFactory(param -> new HiddenCardListCell());
+            player1HandListView.setDisable(true);
+        }
+
+
         discardPileListView.setCellFactory(param -> new CardListCell());
         blueFireworkListView.setCellFactory(param -> new CardListCell());
         greenFireworkListView.setCellFactory(param -> new CardListCell());
@@ -351,11 +391,19 @@ public class GameController {
         checkTips();
     }
 
-    @FXML
+
     public void handleSendButtonAction(ActionEvent event) {
-        String message = chatTextField.getText();
+        String message = messageTextField.getText();
         try {
-            GameApplication.remoteChatService.sendMessage(message);
+            remoteChatService.sendMessage(GameApplication.loggedInRoleName + ": " + message);
+            List<String>  chatMessages = remoteChatService.getAllChatMessages();
+            chatTextArea.clear();
+            messageTextField.clear();
+
+            for(String chatMessage : chatMessages){
+                chatTextArea.appendText(chatMessage + "\n");
+            }
+
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
@@ -395,17 +443,17 @@ public class GameController {
     private void updatePlayerHandListView(int playerIndex) {
         Player player = gameState.getPlayers().get(playerIndex);
         if (playerIndex == 0) {
-            player1HandListView.setCellFactory(param -> new CardListCell());
-            player2HandListView.setCellFactory(param -> new HiddenCardListCell());
+            //player1HandListView.setCellFactory(param -> new CardListCell());
+            //player2HandListView.setCellFactory(param -> new HiddenCardListCell());
             player1HandListView.getItems().setAll(player.getHand());
-            player1HandListView.setDisable(player != currentPlayer);
-            player2HandListView.setDisable(player == currentPlayer);
+            //player1HandListView.setDisable(player != currentPlayer);
+            //player2HandListView.setDisable(player == currentPlayer);
         } else {
-            player1HandListView.setCellFactory(param -> new HiddenCardListCell());
-            player2HandListView.setCellFactory(param -> new CardListCell());
+            //player1HandListView.setCellFactory(param -> new HiddenCardListCell());
+            //player2HandListView.setCellFactory(param -> new CardListCell());
             player2HandListView.getItems().setAll(player.getHand());
-            player2HandListView.setDisable(player != currentPlayer);
-            player1HandListView.setDisable(player == currentPlayer);
+            //player2HandListView.setDisable(player != currentPlayer);
+            //player1HandListView.setDisable(player == currentPlayer);
         }
     }
 

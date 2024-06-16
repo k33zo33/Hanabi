@@ -17,9 +17,9 @@ public class FileUtils {
     public static final String TARGET_FOLDER_LOCATION = "D:\\Java 2\\Hanabi\\target";
 
     public static void saveGameState(Deck deck, List<Player> players, int currentPlayerIndex, Map<Suit, Integer> fireworks,
-                                     List<Card> discardPile, int fuses, int tips) {
+                                     List<Card> discardPile, int fuses, int tips, List<String> player1HandTips, List<String> player2HandTips) {
         GameState gameStateToSave = GameStateUtils.createGameState(deck, players,currentPlayerIndex, fireworks,
-                discardPile,fuses, tips);
+                discardPile,fuses, tips, player1HandTips, player2HandTips);
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(
                 FileUtils.FILE_NAME))) {
             oos.writeObject(gameStateToSave);

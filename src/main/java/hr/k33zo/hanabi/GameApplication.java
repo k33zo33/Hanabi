@@ -3,9 +3,7 @@ package hr.k33zo.hanabi;
 import hr.k33zo.hanabi.chat.service.RemoteChatService;
 import hr.k33zo.hanabi.chat.service.RemoteChatServiceImpl;
 import hr.k33zo.hanabi.controller.GameController;
-import hr.k33zo.hanabi.model.GameState;
-import hr.k33zo.hanabi.model.NetworkConfiguration;
-import hr.k33zo.hanabi.model.RoleName;
+import hr.k33zo.hanabi.model.*;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -67,7 +65,8 @@ public class GameApplication extends Application {
 
 
     private static void acceptRequestsAsServer() {
-        try (ServerSocket serverSocket = new ServerSocket(SERVER_PORT)){
+        Integer serverPort = ConfigurationReader.getInstance().readIntegerValueForKey(ConfigurationKey.SERVER_PORT);
+        try (ServerSocket serverSocket = new ServerSocket(serverPort)){
             System.err.printf("Server listening on port: %d%n", serverSocket.getLocalPort());
 
             while (true) {
@@ -81,7 +80,8 @@ public class GameApplication extends Application {
     }
 
     private static void acceptRequestsAsClient() {
-        try (ServerSocket serverSocket = new ServerSocket(CLIENT_PORT)){
+        Integer clientPort = ConfigurationReader.getInstance().readIntegerValueForKey(ConfigurationKey.CLIENT_PORT);
+        try (ServerSocket serverSocket = new ServerSocket(clientPort)){
             System.err.printf("Server listening on port: %d%n", serverSocket.getLocalPort());
 
             while (true) {
@@ -112,9 +112,13 @@ public class GameApplication extends Application {
 
     private static void startRmiChatServer(){
         try {
-            Registry registry = LocateRegistry.createRegistry(NetworkConfiguration.RMI_PORT);
+            Integer rmiPort = ConfigurationReader.getInstance().readIntegerValueForKey(ConfigurationKey.RMI_PORT);
+            Registry registry = LocateRegistry.createRegistry(rmiPort);
             remoteChatService = new RemoteChatServiceImpl();
-            RemoteChatService skeleton = (RemoteChatService) UnicastRemoteObject.exportObject(remoteChatService, NetworkConfiguration.RANDOM_PORT_HINT);
+            Integer randomPortHint = ConfigurationReader.getInstance().readIntegerValueForKey(
+                    ConfigurationKey.RANDOM_PORT_HINT);
+            RemoteChatService skeleton = (RemoteChatService) UnicastRemoteObject.exportObject(remoteChatService, randomPortHint);
+            //RemoteChatService skeleton = (RemoteChatService) UnicastRemoteObject.exportObject(remoteChatService, NetworkConfiguration.RANDOM_PORT_HINT);
             registry.rebind(RemoteChatService.REMOTE_CHAT_OBJECT_NAME, skeleton);
             System.err.println("Object registered in RMI registry");
         } catch (RemoteException e) {
@@ -123,8 +127,10 @@ public class GameApplication extends Application {
     }
 
     public static void startRmiRemoteChatClient(){
+        String host = ConfigurationReader.getInstance().readStringValueForKey(ConfigurationKey.HOST);
+        Integer rmiPort = ConfigurationReader.getInstance().readIntegerValueForKey(ConfigurationKey.RMI_PORT);
         try {
-            Registry registry = LocateRegistry.getRegistry(HOST, RMI_PORT);
+            Registry registry = LocateRegistry.getRegistry(host, rmiPort);
             remoteChatService = (RemoteChatService) registry.lookup(RemoteChatService.REMOTE_CHAT_OBJECT_NAME);
         } catch (RemoteException | NotBoundException e) {
             e.printStackTrace();

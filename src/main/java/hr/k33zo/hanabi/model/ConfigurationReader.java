@@ -1,4 +1,4 @@
-package hr.k33zo.hanabi.utils;
+package hr.k33zo.hanabi.model;
 
 import hr.k33zo.hanabi.jndi.InitialDirContextCloseable;
 
@@ -12,13 +12,12 @@ import java.util.Properties;
 public class ConfigurationReader {
 
     private static ConfigurationReader reader;
-
     private Hashtable<String, String> environment;
 
     private ConfigurationReader() {
-        environment= new Hashtable<>();
+        environment = new Hashtable<>();
         environment.put(Context.INITIAL_CONTEXT_FACTORY,"com.sun.jndi.fscontext.RefFSContextFactory");
-        environment.put(Context.PROVIDER_URL, "file:src/main/resources/hr/algebra/everdell/conf");
+        environment.put(Context.PROVIDER_URL,"file:G:/configuration");
     }
 
     public static ConfigurationReader getInstance() {
@@ -30,8 +29,8 @@ public class ConfigurationReader {
     }
 
     public Integer readIntegerValueForKey(ConfigurationKey key) {
-        String valueForKey = readStringValueForKey(key);
-        return Integer.parseInt(valueForKey);
+       String valueForkey = readStringValueForKey(key);
+       return Integer.parseInt(valueForkey);
     }
 
     public String readStringValueForKey(ConfigurationKey key) {
@@ -44,7 +43,7 @@ public class ConfigurationReader {
             e.printStackTrace();
         }
 
-        return  valueForKey;
+        return valueForKey;
     }
 
     private static String searchForKey(Context context, ConfigurationKey key) {

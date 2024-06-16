@@ -20,7 +20,7 @@ public class GameState implements Serializable {
     private List<String> player2HandTips;
 
     public GameState(Deck deck, List<Player> players, int currentPlayerIndex, Map<Suit, Integer> fireworks,
-                     List<Card> discardPile, Integer fuses, Integer tips){
+                     List<Card> discardPile, Integer fuses, Integer tips, List<String> player1HandTips, List<String> player2HandTips){
         this.deck = deck;
         this.players = players;
         this.currentPlayerIndex = currentPlayerIndex;
@@ -28,6 +28,8 @@ public class GameState implements Serializable {
         this.discardPile = discardPile;
         this.fuses = fuses;
         this.tips = tips;
+        this.player1HandTips = player1HandTips;
+        this.player2HandTips = player2HandTips;
     }
 
 
@@ -88,4 +90,19 @@ public class GameState implements Serializable {
         this.tips = tips;
     }
 
+    public List<String> getPlayer1HandTips() {
+        return player1HandTips;
+    }
+
+    public void setPlayer1HandTips(List<String> player1HandTips) {
+        this.player1HandTips = player1HandTips;
+    }
+
+    public List<String> getPlayer2HandTips() {
+        return player2HandTips;
+    }
+
+    public void setPlayer2HandTips(List<String> player2HandTips) {
+        this.player2HandTips = player2HandTips;
+    }
 }

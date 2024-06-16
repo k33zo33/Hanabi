@@ -1,5 +1,7 @@
 package hr.k33zo.hanabi.utils;
 
+import hr.k33zo.hanabi.model.ConfigurationKey;
+import hr.k33zo.hanabi.model.ConfigurationReader;
 import hr.k33zo.hanabi.model.GameState;
 import hr.k33zo.hanabi.model.NetworkConfiguration;
 
@@ -11,7 +13,9 @@ import java.net.Socket;
 
 public class NetworkingUtils {
     public static void sendGameStateToServer(GameState gameState){
-        try (Socket clientSocket = new Socket(NetworkConfiguration.HOST, NetworkConfiguration.SERVER_PORT)){
+        Integer serverPort = ConfigurationReader.getInstance().readIntegerValueForKey(ConfigurationKey.SERVER_PORT);
+        String host = ConfigurationReader.getInstance().readStringValueForKey(ConfigurationKey.HOST);
+        try (Socket clientSocket = new Socket(host, serverPort)){
             System.err.printf("Client is connecting to %s:%d%n", clientSocket.getInetAddress(), clientSocket.getPort());
 
             sendSerializableRequest(clientSocket, gameState);
@@ -21,7 +25,9 @@ public class NetworkingUtils {
     }
 
     public static void sendGameStateToClient(GameState gameState){
-        try (Socket clientSocket = new Socket(NetworkConfiguration.HOST, NetworkConfiguration.CLIENT_PORT)){
+        String host = ConfigurationReader.getInstance().readStringValueForKey(ConfigurationKey.HOST);
+        Integer clientPort = ConfigurationReader.getInstance().readIntegerValueForKey(ConfigurationKey.CLIENT_PORT);
+        try (Socket clientSocket = new Socket(host, clientPort)){
             System.err.printf("Client is connecting to %s:%d%n", clientSocket.getInetAddress(), clientSocket.getPort());
 
             sendSerializableRequest(clientSocket, gameState);

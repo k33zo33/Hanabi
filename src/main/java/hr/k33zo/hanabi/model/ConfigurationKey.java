@@ -1,4 +1,4 @@
-package hr.k33zo.hanabi.utils;
+package hr.k33zo.hanabi.model;
 
 public enum ConfigurationKey {
 
@@ -6,7 +6,7 @@ public enum ConfigurationKey {
     SERVER_PORT("server.port"),
     CLIENT_PORT("client.port"),
     RANDOM_PORT_HINT("random.port.hint"),
-    RMI_PORT("rmi.server.port");
+    RMI_PORT("rmi.port");
 
     private String keyName;
 

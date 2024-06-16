@@ -75,6 +75,9 @@ public class GameController {
     private List<Card> discardPile;
     private Integer fuses;
 
+    private List<String> player1HandTips;
+    private List<String> player2HandTips;
+
 
     private GameState gameState;
 
@@ -93,7 +96,9 @@ public class GameController {
         discardPile = new ArrayList<>();
         fuses = 3;
         tips = 8;
-        gameState = new GameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips);
+        player1HandTips = new ArrayList<>();
+        player2HandTips = new ArrayList<>();
+        gameState = new GameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips, player1HandTips, player2HandTips);
         dealInitialCards();
         chatTextArea.setDisable(true);
 
@@ -130,6 +135,14 @@ public class GameController {
             player2HandListView.setCellFactory(param -> new HiddenCardListCell());
             player1HandListView.setDisable(true);
         }
+        else {
+            player1HandListView.setCellFactory(param -> new HiddenCardListCell());
+            player2HandListView.setCellFactory(param -> new CardListCell());
+            player2HandListView.setDisable(true);
+        }
+
+
+
 
 
         discardPileListView.setCellFactory(param -> new CardListCell());
@@ -164,10 +177,12 @@ public class GameController {
 
     public void updateGameState(GameState gameState){
           restoreGameState(gameState);
+
+
     }
 
     public void saveGame(){
-        FileUtils.saveGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips);
+        FileUtils.saveGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips, player1HandTips, player2HandTips);
     }
 
     public void loadGame(){
@@ -185,6 +200,8 @@ public class GameController {
         discardPile = restoredGameState.getDiscardPile();
         fuses = restoredGameState.getFuses();
         tips = restoredGameState.getTips();
+        player1HandTips = restoredGameState.getPlayer1HandTips();
+        player2HandTips = restoredGameState.getPlayer2HandTips();
 
         // Update the UI components
         player1HandListView.getItems().clear();
@@ -196,7 +213,7 @@ public class GameController {
         yellowFireworkListView.getItems().clear();
         whiteFireworkListView.getItems().clear();
 
-        gameState = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips);
+        gameState = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips, player1HandTips, player2HandTips);
 
         // Update the player hands
         List<List<Card>> initialHands = new ArrayList<>();
@@ -247,9 +264,14 @@ public class GameController {
         tips = gameState.getTips();
         giveTipCheckboxButton.setVisible(false);
 
+        updatePlayerHandLabels(0, player1HandTips);
+        updatePlayerHandLabels(1, player2HandTips);
+
         updateLabels();
         updatePlayerHandListView(0);
         updatePlayerHandListView(1);
+
+
     }
 
     private void dealInitialCards() {
@@ -334,12 +356,12 @@ public class GameController {
         updateDiscardPileListView();
         clearCardInfoLabel(gameState.getPlayers().indexOf(player), selectedCardIndex);
 
-        GameState gameStateToSend = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips);
+        GameState gameStateToSend = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips, player1HandTips, player2HandTips);
 
         if (roleName == RoleName.CLIENT){
             NetworkingUtils.sendGameStateToServer(gameStateToSend);
         }
-        else {
+        else if(roleName == RoleName.SERVER) {
             NetworkingUtils.sendGameStateToClient(gameStateToSend);
         }
 
@@ -371,13 +393,21 @@ public class GameController {
         maxTipsWarning();
         updateLabels();
         clearCardInfoLabel(gameState.getPlayers().indexOf(player), selectedCardIndex);
+        RoleName roleName = GameApplication.loggedInRoleName;
         nextPlayer();
         currentPlayer = players.get(currentPlayerIndex);
         updatePlayerHandListView(gameState.getPlayers().indexOf(player));
 
 
-        GameState gameStateToSend = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips);
-        NetworkingUtils.sendGameStateToServer(gameStateToSend);
+        GameState gameStateToSend = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips, player1HandTips, player2HandTips);
+
+
+        if (roleName == RoleName.CLIENT){
+            NetworkingUtils.sendGameStateToServer(gameStateToSend);
+        }
+        else if(roleName == RoleName.SERVER) {
+            NetworkingUtils.sendGameStateToClient(gameStateToSend);
+        }
 
     }
 
@@ -409,51 +439,101 @@ public class GameController {
         }
     }
 
-    public void  handleGiveTipCheckboxButton(ActionEvent event){
-        Player player = players.get(currentPlayerIndex);
+    public void handleGiveTipCheckboxButton(ActionEvent event) {
+        Player currentPlayer = players.get(currentPlayerIndex);
         String selectedTip = (String) giveTipCheckboxButton.getUserData();
         if (selectedTip == null) {
             return;
         }
 
-        Player otherPlayer = gameState.getPlayers().get(0) == currentPlayer ? gameState.getPlayers().get(1) : gameState.getPlayers().get(0);
-        int otherPlayerIndex = gameState.getPlayers().indexOf(otherPlayer) + 1;
+        // Determine the other player
+        Player otherPlayer = (gameState.getPlayers().get(0) == currentPlayer) ? gameState.getPlayers().get(1) : gameState.getPlayers().get(0);
 
+        // Extract indices from the selected tip
         String indicesText = selectedTip.substring(selectedTip.lastIndexOf("indices") + 8, selectedTip.length() - 1);
         String[] indicesArray = indicesText.split(", ");
+        List<String> tipsList = new ArrayList<>();
+
+        // Generate tips based on the selected tip
         for (String index : indicesArray) {
             index = index.replace("[", "").replace("]", "");
             int cardIndex = Integer.parseInt(index);
-            Label label = (Label) tipsVBox.getScene().lookup("#p" + otherPlayerIndex + "CardInfoLabel" + (cardIndex + 1));
             if (selectedTip.contains("cards with number")) {
-                label.setText(label.getText() + " " + "This card is " + otherPlayer.getHand().get(cardIndex).getCadNumber());
+                tipsList.add("This card is " + otherPlayer.getHand().get(cardIndex).getCadNumber());
             } else {
-                label.setText(label.getText() + " " + "This card is " + otherPlayer.getHand().get(cardIndex).getCardSuit());
+                tipsList.add("This card is " + otherPlayer.getHand().get(cardIndex).getCardSuit());
             }
         }
+
+        // Update the appropriate player's tips list
+        if (currentPlayer == gameState.getPlayers().get(0)) {
+            player1HandTips.clear();
+            player1HandTips.addAll(tipsList);
+        } else {
+            player2HandTips.clear();
+            player2HandTips.addAll(tipsList);
+        }
+
+         //Set labels for the other player's hand based on the tips
+        int otherPlayerIndex = gameState.getPlayers().indexOf(otherPlayer) + 1;
+        for (int i = 0; i < tipsList.size(); i++) {
+            String tip = tipsList.get(i);
+            int cardIndex = Integer.parseInt(indicesArray[i].replaceAll("[\\[\\]]", ""));
+            Label label = (Label) tipsVBox.getScene().lookup("#p" + otherPlayerIndex + "CardInfoLabel" + (cardIndex + 1));
+            label.setText(label.getText() + " " + tip);
+        }
+
         giveTipCheckboxButton.setUserData(null);
         giveTipCheckboxButton.setVisible(false);
         tipsVBox.setVisible(false);
+
+        RoleName roleName = GameApplication.loggedInRoleName;
         updateLabels();
         nextPlayer();
         currentPlayer = players.get(currentPlayerIndex);
-        updatePlayerHandListView(gameState.getPlayers().indexOf(player));
+        updatePlayerHandListView(gameState.getPlayers().indexOf(currentPlayer));
+
+        GameState gameStateToSend = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips, player1HandTips, player2HandTips);
+
+        if (roleName == RoleName.CLIENT){
+            NetworkingUtils.sendGameStateToServer(gameStateToSend);
+        }
+        else if (roleName == RoleName.SERVER) {
+            NetworkingUtils.sendGameStateToClient(gameStateToSend);
+        }
     }
+
 
     private void updatePlayerHandListView(int playerIndex) {
         Player player = gameState.getPlayers().get(playerIndex);
-        if (playerIndex == 0) {
-            //player1HandListView.setCellFactory(param -> new CardListCell());
-            //player2HandListView.setCellFactory(param -> new HiddenCardListCell());
-            player1HandListView.getItems().setAll(player.getHand());
-            //player1HandListView.setDisable(player != currentPlayer);
-            //player2HandListView.setDisable(player == currentPlayer);
+        if (GameApplication.loggedInRoleName == RoleName.SINGLE_PLAYER){
+            if (playerIndex == 0) {
+                player1HandListView.setCellFactory(param -> new CardListCell());
+                player2HandListView.setCellFactory(param -> new HiddenCardListCell());
+                player1HandListView.getItems().setAll(player.getHand());
+                player1HandListView.setDisable(player != currentPlayer);
+                player2HandListView.setDisable(player == currentPlayer);
+            } else {
+                player1HandListView.setCellFactory(param -> new HiddenCardListCell());
+                player2HandListView.setCellFactory(param -> new CardListCell());
+                player2HandListView.getItems().setAll(player.getHand());
+                player2HandListView.setDisable(player != currentPlayer);
+                player1HandListView.setDisable(player == currentPlayer);
+            }
         } else {
-            //player1HandListView.setCellFactory(param -> new HiddenCardListCell());
-            //player2HandListView.setCellFactory(param -> new CardListCell());
-            player2HandListView.getItems().setAll(player.getHand());
-            //player2HandListView.setDisable(player != currentPlayer);
-            //player1HandListView.setDisable(player == currentPlayer);
+            if (playerIndex == 0) {
+                //player1HandListView.setCellFactory(param -> new CardListCell());
+                //player2HandListView.setCellFactory(param -> new HiddenCardListCell());
+                player1HandListView.getItems().setAll(player.getHand());
+                //player1HandListView.setDisable(player != currentPlayer);
+                //player2HandListView.setDisable(player == currentPlayer);
+            } else {
+                //player1HandListView.setCellFactory(param -> new HiddenCardListCell());
+                //player2HandListView.setCellFactory(param -> new CardListCell());
+                player2HandListView.getItems().setAll(player.getHand());
+                //player2HandListView.setDisable(player != currentPlayer);
+                //player1HandListView.setDisable(player == currentPlayer);
+            }
         }
     }
 
@@ -577,6 +657,14 @@ public class GameController {
             }
         }
 
+        if (player == players.get(0)) {
+            player1HandTips.clear();
+            player1HandTips.addAll(possibleTips);
+        } else {
+            player2HandTips.clear();
+            player2HandTips.addAll(possibleTips);
+        }
+
         tipsVBox.getChildren().clear();
         tipsVBox.setVisible(true);
         for (String tip : possibleTips) {
@@ -595,6 +683,7 @@ public class GameController {
             tipsVBox.getChildren().add(checkBox);
         }
     }
+
 
     private void clearCardInfoLabel(int playerIndex, int cardIndex) {
         Label label = (Label) tipsVBox.getScene().lookup("#p" + (playerIndex + 1) + "CardInfoLabel" + (cardIndex + 1));
@@ -622,5 +711,44 @@ public class GameController {
     public void saveDocumentation() throws IOException, ClassNotFoundException {
         DocumentationUtils.generateDocumentation();
     }
+
+    private void updatePlayerHandLabels(int playerIndex, List<String> tipsList) {
+        RoleName roleName = GameApplication.loggedInRoleName;
+
+        // Clear all labels in tipsVBox
+        for (Node node : tipsVBox.getChildren()) {
+            if (node instanceof Label) {
+                ((Label) node).setText("");
+            }
+        }
+
+        // Update labels for the appropriate player's tips
+        if (roleName == RoleName.SERVER && playerIndex == 1) {
+            for (int i = 0; i < tipsList.size(); i++) {
+                String tip = tipsList.get(i);
+                String labelId = "#p1CardInfoLabel" + (i + 1); // Assuming labels are named like p1CardInfoLabel1, p1CardInfoLabel2, etc.
+                Label label = (Label) tipsVBox.getScene().lookup(labelId);
+                if (label != null) {
+                    label.setText(tip);
+                } else {
+                    System.out.println("Label not found for index: " + i + " with ID: " + labelId);
+                }
+            }
+        } else if (roleName == RoleName.CLIENT && playerIndex == 0) {
+            for (int i = 0; i < tipsList.size(); i++) {
+                String tip = tipsList.get(i);
+                String labelId = "#p2CardInfoLabel" + (i + 1); // Assuming labels are named like p2CardInfoLabel1, p2CardInfoLabel2, etc.
+                Label label = (Label) tipsVBox.getScene().lookup(labelId);
+                if (label != null) {
+                    label.setText(tip);
+                } else {
+                    System.out.println("Label not found for index: " + i + " with ID: " + labelId);
+                }
+            }
+        }
+    }
+
+
+
 
 }

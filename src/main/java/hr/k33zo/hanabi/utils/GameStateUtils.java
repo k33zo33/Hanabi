@@ -13,11 +13,11 @@ public class GameStateUtils {
 
 
     public static GameState createGameState(Deck deck, List<Player> players, int currentPlayerIndex, Map<Suit, Integer> fireworks,
-                                            List<Card> discardPile, int fuses, int tips){
+                                            List<Card> discardPile, int fuses, int tips, List<String> player1HandTips, List<String> player2HandTips){
 
 
 
-        return new GameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips);
+        return new GameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips, player1HandTips, player2HandTips);
 
     }
 }

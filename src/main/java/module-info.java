@@ -3,6 +3,7 @@ module hr.k33zo.hanabi {
     requires javafx.fxml;
     requires java.naming;
     requires java.rmi;
+    requires java.xml;
 
     exports hr.k33zo.hanabi.chat.service to java.rmi;
     opens hr.k33zo.hanabi to javafx.fxml;

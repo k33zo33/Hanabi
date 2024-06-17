@@ -29,7 +29,7 @@ public class Deck implements Serializable {
                     copies = 2;
                 }
                 for (int i = 0; i < copies; i++) {
-                    Card card = new Card(suit, number, false);
+                    Card card = new Card(suit, number);
                     cards.add(card);
                 }
             }

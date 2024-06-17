@@ -17,7 +17,7 @@ public class ConfigurationReader {
     private ConfigurationReader() {
         environment = new Hashtable<>();
         environment.put(Context.INITIAL_CONTEXT_FACTORY,"com.sun.jndi.fscontext.RefFSContextFactory");
-        environment.put(Context.PROVIDER_URL,"file:G:/configuration");
+        environment.put(Context.PROVIDER_URL,"file:/configuration");
     }
 
     public static ConfigurationReader getInstance() {

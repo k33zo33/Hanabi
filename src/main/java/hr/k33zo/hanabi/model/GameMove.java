@@ -1,43 +1,107 @@
 package hr.k33zo.hanabi.model;
 
+import hr.k33zo.hanabi.enums.Suit;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public class GameMove implements Serializable {
 
-    private Integer player;
-    private MoveType moveType;
+    private Deck deck;
+    private List<Player> players;
+    private int currentPlayerIndex;
+    private Map<Suit, Integer> fireworks;
+    private List<Card> discardPile;
+    private Integer fuses;
+    private Integer tips;
     private LocalDateTime dateTime;
-    private int cardIndex;
-    private String hint;
-    private List<String> hintedCards;
-    private String cardSuit;
+    private MoveType moveType;
 
-    public GameMove(Integer player, MoveType moveType, LocalDateTime dateTime, int cardIndex, String hint, List<String> hintedCardIndices, String cardSuit) {
-        this.player = player;
-        this.moveType = moveType;
+    public GameMove() {
+    }
+
+
+
+    public GameMove(Deck deck, List<Player> players, int currentPlayerIndex, Map<Suit, Integer> fireworks,
+                    List<Card> discardPile, Integer fuses, Integer tips, LocalDateTime dateTime, MoveType moveType) {
+        this.deck = deck;
+        this.players = players;
+        this.currentPlayerIndex = currentPlayerIndex;
+        this.fireworks = fireworks;
+        this.discardPile = discardPile;
+        this.fuses = fuses;
+        this.tips = tips;
         this.dateTime = dateTime;
-        this.cardIndex = cardIndex;
-        this.hint = hint;
-        this.hintedCards = hintedCardIndices;
-        this.cardSuit = cardSuit;
-    }
-
-    public Integer getPlayer() {
-        return player;
-    }
-
-    public void setPlayer(Integer player) {
-        this.player = player;
-    }
-
-    public MoveType getMoveType() {
-        return moveType;
-    }
-
-    public void setMoveType(MoveType moveType) {
         this.moveType = moveType;
+    }
+
+    public GameMove(String actionType, int currentPlayerIndex, int fuses, int tips, LocalDateTime dateTime, List<Player> players, List<Card> discardPile, Map<Suit, Integer> fireworks) {
+        this.currentPlayerIndex = currentPlayerIndex;
+        this.fuses = fuses;
+        this.tips = tips;
+        this.dateTime = dateTime;
+        this.players = players;
+        this.discardPile = discardPile;
+        this.fireworks = fireworks;
+        this.moveType = MoveType.valueOf(actionType);
+    }
+
+    public Deck getDeck() {
+        return deck;
+    }
+
+    public void setDeck(Deck deck) {
+        this.deck = deck;
+    }
+
+    public List<Player> getPlayers() {
+        return players;
+    }
+
+    public void setPlayers(List<Player> players) {
+        this.players = players;
+    }
+
+    public int getCurrentPlayerIndex() {
+        return currentPlayerIndex;
+    }
+
+    public void setCurrentPlayerIndex(int currentPlayerIndex) {
+        this.currentPlayerIndex = currentPlayerIndex;
+    }
+
+    public Map<Suit, Integer> getFireworks() {
+        return fireworks;
+    }
+
+    public void setFireworks(Map<Suit, Integer> fireworks) {
+        this.fireworks = fireworks;
+    }
+
+    public List<Card> getDiscardPile() {
+        return discardPile;
+    }
+
+    public void setDiscardPile(List<Card> discardPile) {
+        this.discardPile = discardPile;
+    }
+
+    public Integer getFuses() {
+        return fuses;
+    }
+
+    public void setFuses(Integer fuses) {
+        this.fuses = fuses;
+    }
+
+    public Integer getTips() {
+        return tips;
+    }
+
+    public void setTips(Integer tips) {
+        this.tips = tips;
     }
 
     public LocalDateTime getDateTime() {
@@ -48,47 +112,24 @@ public class GameMove implements Serializable {
         this.dateTime = dateTime;
     }
 
-    public int getCardIndex() {
-        return cardIndex;
+    public MoveType getMoveType() {
+        return moveType;
     }
 
-    public void setCardIndex(int cardIndex) {
-        this.cardIndex = cardIndex;
-    }
-
-    public String getHint() {
-        return hint;
-    }
-
-    public void setHint(String hint) {
-        this.hint = hint;
-    }
-
-    public List<String> getHintedCardIndices() {
-        return hintedCards;
-    }
-
-    public void setHintedCardIndices(List<String> hintedCardIndices) {
-        this.hintedCards = hintedCardIndices;
-    }
-
-    public String getCardSuit() {
-        return cardSuit;
-    }
-
-    public void setCardSuit(String cardSuit) {
-        this.cardSuit = cardSuit;
+    public void setMoveType(MoveType moveType) {
+        this.moveType = moveType;
     }
 
     @Override
     public String toString() {
-        return "player=" + player.toString() +
-                ", moveType=" + moveType +
-                ", dateTime=" + dateTime +
-                ", cardIndex=" + cardIndex +
-                ", hint='" + hint +
-                ", hintedCardIndices=" + hintedCards +
-                ", cardSuit='" + cardSuit ;
+        return "GameMove{" +
+                "deck=" + deck +
+                ", players=" + players +
+                ", currentPlayerIndex=" + currentPlayerIndex +
+                ", fireworks=" + fireworks +
+                ", discardPile=" + discardPile +
+                ", fuses=" + fuses +
+                ", tips=" + tips +
+                '}';
     }
-
 }

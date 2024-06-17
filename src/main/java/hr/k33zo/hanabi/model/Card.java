@@ -7,15 +7,13 @@ import java.io.Serializable;
 public class Card implements Serializable {
 
     private Suit cardSuit;
-    private int cardNumber;
-    private Boolean isVisible;
+    private Integer cardNumber;
 
     private Player owner;
 
-    public Card(Suit cardSuit, int cadNumber, Boolean isVisible) {
+    public Card(Suit cardSuit, Integer cardNumber) {
         this.cardSuit = cardSuit;
-        this.cardNumber = cadNumber;
-        this.isVisible = true;
+        this.cardNumber = cardNumber;
     }
 
     public Suit getCardSuit() {
@@ -26,19 +24,12 @@ public class Card implements Serializable {
         this.cardSuit = cardSuit;
     }
 
-    public int getCadNumber() {
+    public Integer getCardNumber() {
         return cardNumber;
     }
 
-    public void setCadNumber(int cadNumber) {
-        this.cardNumber = cadNumber;
-    }
-    public Boolean getVisible() {
-        return isVisible;
-    }
-
-    public void setVisible(Boolean visible) {
-        isVisible = visible;
+    public void setCardNumber(int cardNumber) {
+        this.cardNumber = cardNumber;
     }
 
     public void setOwner(Player owner) {
@@ -52,5 +43,22 @@ public class Card implements Serializable {
     @Override
     public String toString() {
         return cardSuit.name() + " " + cardNumber;
+    }
+
+    public static Card fromString(String cardStr) {
+        // Remove the <card> and </card> tags and trim any remaining whitespace
+        String content = cardStr.replaceAll("<card>|</card>", "").trim();
+
+        String[] parts = content.split(" ");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Invalid card string: " + cardStr);
+        }
+
+        String suitStr = parts[0];
+        int number = Integer.parseInt(parts[1]);
+
+        Suit suit = Suit.valueOf(suitStr);
+
+        return new Card(suit, number);
     }
 }

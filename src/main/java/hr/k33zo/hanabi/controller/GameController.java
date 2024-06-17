@@ -5,10 +5,7 @@ import hr.k33zo.hanabi.enums.Suit;
 import hr.k33zo.hanabi.model.*;
 import hr.k33zo.hanabi.thread.GetLastMoveThread;
 import hr.k33zo.hanabi.thread.SaveGameMoveThread;
-import hr.k33zo.hanabi.utils.DocumentationUtils;
-import hr.k33zo.hanabi.utils.FileUtils;
-import hr.k33zo.hanabi.utils.GameStateUtils;
-import hr.k33zo.hanabi.utils.NetworkingUtils;
+import hr.k33zo.hanabi.utils.*;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -76,6 +73,8 @@ public class GameController {
     private List<String> player1HandTips;
     private List<String> player2HandTips;
     private GameState gameState;
+    Integer fuseCounter = 3;
+    Integer tipCounter = 8;
 
 
     public void initialize() {
@@ -218,7 +217,7 @@ public class GameController {
         for (Suit suit : Suit.values()) {
             int highestValue = fireworks.getOrDefault(suit, 0);
             for (int i = 1; i <= highestValue; i++) {
-                Card card = new Card(suit, i, true); // assuming the card's visibility should be true for fireworks
+                Card card = new Card(suit, i); // assuming the card's visibility should be true for fireworks
                 switch (suit) {
                     case BLUE:
                         blueFireworkListView.getItems().add(card);
@@ -274,7 +273,7 @@ public class GameController {
     }
     public boolean canPlay(Card card) {
         int highestValue = fireworks.get(card.getCardSuit());
-        return card.getCadNumber() == highestValue + 1;
+        return card.getCardNumber() == highestValue + 1;
     }
 
     public void handleDrawCard(ActionEvent event) {
@@ -291,7 +290,7 @@ public class GameController {
         Player player = players.get(currentPlayerIndex);
         Card card = player.playCard(index);
         int highestValue = fireworks.get(card.getCardSuit());
-        fireworks.put(card.getCardSuit(), Math.max(highestValue, card.getCadNumber()));
+        fireworks.put(card.getCardSuit(), Math.max(highestValue, card.getCardNumber()));
     }
 
     public void discardCard(int playerIndex, int cardIndex) {
@@ -329,14 +328,23 @@ public class GameController {
             discardCard(gameState.getPlayers().indexOf(player), selectedCardIndex);
             updatePlayerHandListView(gameState.getPlayers().indexOf(player));
             fuses--;
+            fuseCounter--;
         }
         handleDrawCard(event);
         updateLabels();
         clearCardInfoLabel(gameState.getPlayers().indexOf(player), selectedCardIndex);
 
+
         LocalDateTime dateTime = LocalDateTime.now();
-        SaveGameMoveThread saveGameMoveThread = new SaveGameMoveThread(new GameMove(currentPlayerIndex,
-                MoveType.PLAY, dateTime, selectedCardIndex, null, null, card.getCardSuit().toString()));
+
+        GameMove gameMove = new GameMove(deck,
+                players, currentPlayerIndex, fireworks, discardPile, fuses, tips, dateTime, MoveType.PLAY);
+
+        SaveGameMoveThread saveGameMoveThread = new SaveGameMoveThread(gameMove);
+
+        XmlUtils.saveGameMove(gameMove);
+
+        //save to xml
 
         Thread threadStarter = new Thread(saveGameMoveThread);
         threadStarter.start();
@@ -348,7 +356,10 @@ public class GameController {
         updateDiscardPileListView();
         clearCardInfoLabel(gameState.getPlayers().indexOf(player), selectedCardIndex);
 
-        GameState gameStateToSend = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips, player1HandTips, player2HandTips);
+        GameState gameStateToSend = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile,
+                fuses, tips, player1HandTips, player2HandTips);
+
+
 
         if (roleName == RoleName.CLIENT){
             NetworkingUtils.sendGameStateToServer(gameStateToSend);
@@ -381,22 +392,29 @@ public class GameController {
         }
         if (tips < 8) {
             tips++;
+            tipCounter++;
         }
         maxTipsWarning();
         updateLabels();
         clearCardInfoLabel(gameState.getPlayers().indexOf(player), selectedCardIndex);
         RoleName roleName = GameApplication.loggedInRoleName;
         LocalDateTime dateTime = LocalDateTime.now();
-        SaveGameMoveThread saveGameMoveThread = new SaveGameMoveThread(new GameMove(currentPlayerIndex,
-                MoveType.DISCARD, dateTime, selectedCardIndex, null, null, card.getCardSuit().toString()));
-
+        GameMove gameMove = new GameMove(deck,
+                players, currentPlayerIndex, fireworks, discardPile, fuses, tips, dateTime, MoveType.PLAY);
+        SaveGameMoveThread saveGameMoveThread = new SaveGameMoveThread(gameMove);
+        XmlUtils.saveGameMove(gameMove);
         Thread threadStarter = new Thread(saveGameMoveThread);
         threadStarter.start();
+
+
+
+        XmlUtils.saveGameMove(gameMove);
         nextPlayer();
         currentPlayer = players.get(currentPlayerIndex);
         updatePlayerHandListView(gameState.getPlayers().indexOf(player));
 
-        GameState gameStateToSend = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips, player1HandTips, player2HandTips);
+        GameState gameStateToSend = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile,
+                fuses, tips, player1HandTips, player2HandTips);
 
         if (roleName == RoleName.CLIENT){
             NetworkingUtils.sendGameStateToServer(gameStateToSend);
@@ -413,6 +431,7 @@ public class GameController {
         generatePossibleTips(otherPlayer);
         giveTipCheckboxButton.setVisible(true);
         tips--;
+        tipCounter--;
         updateLabels();
         checkTips();
     }
@@ -451,7 +470,7 @@ public class GameController {
             index = index.replace("[", "").replace("]", "");
             int cardIndex = Integer.parseInt(index);
             if (selectedTip.contains("cards with number")) {
-                tipsList.add("This card is " + otherPlayer.getHand().get(cardIndex).getCadNumber());
+                tipsList.add("This card is " + otherPlayer.getHand().get(cardIndex).getCardNumber());
             } else {
                 tipsList.add("This card is " + otherPlayer.getHand().get(cardIndex).getCardSuit());
             }
@@ -483,15 +502,18 @@ public class GameController {
         updateLabels();
 
         LocalDateTime dateTime = LocalDateTime.now();
-        SaveGameMoveThread saveGameMoveThread = new SaveGameMoveThread(new GameMove(currentPlayerIndex,
-                        MoveType.GIVE_HINT, dateTime, cardIndex, tip, tipsList, null));
+        GameMove gameMove = new GameMove(deck,
+                players, currentPlayerIndex, fireworks, discardPile, fuses, tips, dateTime, MoveType.PLAY);
 
+        SaveGameMoveThread saveGameMoveThread = new SaveGameMoveThread(gameMove);
+        XmlUtils.saveGameMove(gameMove);
         Thread threadStarter = new Thread(saveGameMoveThread);
         threadStarter.start();
 
         nextPlayer();
         currentPlayer = players.get(currentPlayerIndex);
         updatePlayerHandListView(gameState.getPlayers().indexOf(currentPlayer));
+
 
         GameState gameStateToSend = GameStateUtils.createGameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips, player1HandTips, player2HandTips);
 
@@ -536,7 +558,7 @@ public class GameController {
     }
 
     private void updateFireworksListView(Card card) {
-        gameState.getFireworks().put(card.getCardSuit(), card.getCadNumber());
+        gameState.getFireworks().put(card.getCardSuit(), card.getCardNumber());
         switch (card.getCardSuit()) {
             case BLUE:
                 blueFireworkListView.getItems().add(card);
@@ -557,8 +579,10 @@ public class GameController {
     }
 
     private void updateLabels() {
-        remainingFusesLabel.setText(gameState.getFuses().toString());
-        remainingTipsLabel.setText(gameState.getTips().toString());
+//        remainingFusesLabel.setText(gameState.getFuses().toString());
+//        remainingTipsLabel.setText(gameState.getTips().toString());
+        remainingFusesLabel.setText(fuseCounter.toString());
+        remainingTipsLabel.setText(tipCounter.toString());
     }
 
     public void checkGameOver() {
@@ -591,7 +615,26 @@ public class GameController {
     }
 
     public void resetGame() {
-
+        deck = new Deck();
+        players = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            players.add(new Player());
+        }
+        currentPlayerIndex = 0;
+        fireworks = new HashMap<>();
+        for (Suit suit : Suit.values()) {
+            fireworks.put(suit, 0);
+        }
+        discardPile = new ArrayList<>();
+        fuses = 3;
+        tips = 8;
+        remainingFusesLabel.setText(fuses.toString());
+        remainingTipsLabel.setText(tips.toString());
+        player1HandTips = new ArrayList<>();
+        player2HandTips = new ArrayList<>();
+        gameState = new GameState(deck, players, currentPlayerIndex, fireworks, discardPile, fuses, tips, player1HandTips, player2HandTips);
+        dealInitialCards();
+        chatTextArea.setDisable(true);
         player1HandListView.getItems().setAll(gameState.getPlayers().get(0).getHand());
         player2HandListView.getItems().setAll(gameState.getPlayers().get(1).getHand());
         discardPileListView.getItems().clear();
@@ -605,8 +648,8 @@ public class GameController {
         currentPlayer = players.get(currentPlayerIndex);
         fuses = gameState.getFuses();
         tips = gameState.getTips();
-        updateLabels();
-        updatePlayerHandListView(0);
+        //updateLabels();
+        updatePlayerHandListView(1);
     }
 
     public void generatePossibleTips(Player player) {
@@ -624,7 +667,7 @@ public class GameController {
         for (int i = 0; i < hand.size(); i++) {
             Card card = hand.get(i);
             suitIndices.get(card.getCardSuit()).add(i);
-            numberIndices.get(card.getCadNumber()).add(i);
+            numberIndices.get(card.getCardNumber()).add(i);
         }
 
         List<String> possibleTips = new ArrayList<>();

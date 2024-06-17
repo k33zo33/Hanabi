@@ -11,6 +11,10 @@ public class Player implements Serializable {
         this.hand = new ArrayList<>();
     }
 
+    public Player(List<Card> hand) {
+        this.hand = new ArrayList<>();
+    }
+
     public List<Card> getHand() {
         return hand;
     }

@@ -10,6 +10,7 @@ import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -23,31 +24,33 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static hr.k33zo.hanabi.GameApplication.gameController;
 import static hr.k33zo.hanabi.GameApplication.remoteChatService;
 
 public class GameController {
 
     @FXML
-    private ListView<Card> player1HandListView;
+    public ListView<Card> player1HandListView;
     @FXML
-    private ListView<Card> player2HandListView;
+    public ListView<Card> player2HandListView;
     @FXML
-    private ListView<Card> discardPileListView;
+    public ListView<Card> discardPileListView;
     @FXML
-    private ListView<Card> blueFireworkListView;
+    public ListView<Card> blueFireworkListView;
     @FXML
-    private ListView<Card> greenFireworkListView;
+    public ListView<Card> greenFireworkListView;
     @FXML
-    private ListView<Card> redFireworkListView;
+    public ListView<Card> redFireworkListView;
     @FXML
-    private ListView<Card> yellowFireworkListView;
+    public ListView<Card> yellowFireworkListView;
     @FXML
-    private ListView<Card> whiteFireworkListView;
+    public ListView<Card> whiteFireworkListView;
     @FXML
-    private Label remainingFusesLabel;
+    public Label remainingFusesLabel;
     @FXML
-    private Label remainingTipsLabel;
+    public Label remainingTipsLabel;
     @FXML
     private VBox tipsVBox;
     @FXML
@@ -78,6 +81,9 @@ public class GameController {
 
 
     public void initialize() {
+
+        XmlUtils.createNewReplayFile();
+
         deck = new Deck();
         players = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
@@ -159,6 +165,8 @@ public class GameController {
         GetLastMoveThread getLastMoveThread = new GetLastMoveThread(lastGameMoveLabel);
         Thread threadStarter = new Thread(getLastMoveThread);
         threadStarter.start();
+
+
 
 
         currentPlayer = players.get(currentPlayerIndex);
@@ -772,5 +780,27 @@ public class GameController {
                 }
             }
         }
+    }
+
+    private static Timeline getTimeLine(List<GameMove> gameMoveList){
+
+        AtomicInteger counter = new AtomicInteger(0);
+
+        Timeline replayTimeline = new Timeline(new KeyFrame(Duration.seconds(1), new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+
+                GameMove gameMove = gameMoveList.get(counter.get());
+
+
+
+            }
+        }), new KeyFrame(Duration.seconds(1)));
+
+        return replayTimeline;
+    }
+
+    public void replayGame(ActionEvent event) {
+        GameStateUtils.replayGame(GameController.this);
     }
 }

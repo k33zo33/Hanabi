@@ -6,7 +6,7 @@ import javafx.scene.text.Text;
 
 public class HiddenCardListCell extends ListCell<Card> {
     @Override
-    protected void updateItem(Card card, boolean empty) {
+    public void updateItem(Card card, boolean empty) {
         super.updateItem(card, empty);
         if (empty || card == null) {
             setGraphic(null);

@@ -46,18 +46,11 @@ public class Card implements Serializable {
     }
 
     public static Card fromString(String cardStr) {
+        //WHITE 3
+        String[] parts = cardStr.split(" ");
         // Remove the <card> and </card> tags and trim any remaining whitespace
-        String content = cardStr.replaceAll("<card>|</card>", "").trim();
-
-        String[] parts = content.split(" ");
-        if (parts.length != 2) {
-            throw new IllegalArgumentException("Invalid card string: " + cardStr);
-        }
-
-        String suitStr = parts[0];
-        int number = Integer.parseInt(parts[1]);
-
-        Suit suit = Suit.valueOf(suitStr);
+        Suit suit = Suit.valueOf(parts[0]);
+        Integer number = Integer.parseInt(parts[1]);
 
         return new Card(suit, number);
     }

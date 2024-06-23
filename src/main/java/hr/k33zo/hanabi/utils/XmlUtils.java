@@ -42,51 +42,52 @@ public class XmlUtils {
 
         try {
             Document document = createDocument("gameMoves");
-            Element gameMoveElement = document.createElement("gameMove");
-            document.getDocumentElement().appendChild(gameMoveElement);
+            for(GameMove gm : gameMoveList) {
+
+                Element gameMoveElement = document.createElement("gameMove");
+                document.getDocumentElement().appendChild(gameMoveElement);
 
 
-            gameMoveElement.appendChild(createElement(document, "action_type", gameMove.getMoveType().toString()));
-            gameMoveElement.appendChild(createElement(document, "currentPlayerIndex", String.valueOf(gameMove.getCurrentPlayerIndex())));
-            gameMoveElement.appendChild(createElement(document, "fuses", String.valueOf(gameMove.getFuses())));
-            gameMoveElement.appendChild(createElement(document, "tips", String.valueOf(gameMove.getTips())));
-            gameMoveElement.appendChild(createElement(document, "dateTime", gameMove.getDateTime().format(dateTimeFormatter)));
+                gameMoveElement.appendChild(createElement(document, "action_type", gm.getMoveType().toString()));
+                gameMoveElement.appendChild(createElement(document, "currentPlayerIndex", String.valueOf(gm.getCurrentPlayerIndex())));
+                gameMoveElement.appendChild(createElement(document, "fuses", String.valueOf(gm.getFuses())));
+                gameMoveElement.appendChild(createElement(document, "tips", String.valueOf(gm.getTips())));
+                gameMoveElement.appendChild(createElement(document, "dateTime", gm.getDateTime().format(dateTimeFormatter)));
 
 
-            Element playersElement = document.createElement("players");
-            for (Player player : gameMove.getPlayers()) {
-                Element playerElement = document.createElement("player");
-                playersElement.appendChild(playerElement);
+                Element playersElement = document.createElement("players");
+                for (Player player : gm.getPlayers()) {
+                    Element playerElement = document.createElement("player");
 
-                List<String> cardRepresentations = convertCardsToXmlStrings(player.getHand());
-                for (String cardRepresentation : cardRepresentations) {
-                    playerElement.appendChild(createElement(document, "card", cardRepresentation));
+
+                    List<String> cardRepresentations = convertCardsToXmlStrings(player.getHand());
+                    for (String cardRepresentation : cardRepresentations) {
+                        playerElement.appendChild(createElement(document, "card", cardRepresentation));
+                    }
+                    playersElement.appendChild(playerElement);
                 }
+                gameMoveElement.appendChild(playersElement);
+
+                Element discardPileElement = document.createElement("discardPile");
+                for (Card card : gm.getDiscardPile()) {
+                    discardPileElement.appendChild(createElement(document, "card", card.toString()));
+                }
+                gameMoveElement.appendChild(discardPileElement);
+
+                Element fireworksElement = document.createElement("fireworks");
+                for (Map.Entry<Suit, Integer> entry : gm.getFireworks().entrySet()) {
+                    Element suitElement = document.createElement("suit");
+                    suitElement.appendChild(document.createTextNode(entry.getKey().toString())); // Modify based on Suit's toString()
+                    fireworksElement.appendChild(suitElement);
+
+                    Element countElement = document.createElement("count");
+                    countElement.appendChild(document.createTextNode(String.valueOf(entry.getValue())));
+                    fireworksElement.appendChild(countElement);
+                }
+                gameMoveElement.appendChild(fireworksElement);
+
+
             }
-            gameMoveElement.appendChild(playersElement);
-
-            Element discardPileElement = document.createElement("discardPile");
-            for (Card card : gameMove.getDiscardPile()) {
-                discardPileElement.appendChild(createElement(document, "card", card.toString()));
-            }
-            gameMoveElement.appendChild(discardPileElement);
-
-            Element fireworksElement = document.createElement("fireworks");
-            for (Map.Entry<Suit, Integer> entry : gameMove.getFireworks().entrySet()) {
-                Element suitElement = document.createElement("suit");
-                suitElement.appendChild(document.createTextNode(entry.getKey().toString())); // Modify based on Suit's toString()
-                fireworksElement.appendChild(suitElement);
-
-                Element countElement = document.createElement("count");
-                countElement.appendChild(document.createTextNode(String.valueOf(entry.getValue())));
-                fireworksElement.appendChild(countElement);
-            }
-            gameMoveElement.appendChild(fireworksElement);
-
-
-
-
-
             saveDocument(document, FILE_NAME);
         } catch (ParserConfigurationException | TransformerException e) {
             e.printStackTrace();
@@ -104,14 +105,12 @@ public class XmlUtils {
             doc.getDocumentElement().normalize();
 
             NodeList gameMoveNodes = doc.getElementsByTagName("gameMove");
-            System.out.println("Found " + gameMoveNodes.getLength() + " gameMove nodes in the XML file.");
 
             for (int i = 0; i < gameMoveNodes.getLength(); i++) {
                 Node gameMoveNode = gameMoveNodes.item(i);
                 if (gameMoveNode.getNodeType() == Node.ELEMENT_NODE) {
                     Element gameMoveElement = (Element) gameMoveNode;
 
-                    logElement(gameMoveElement);
 
                     String actionType = getTextContent(gameMoveElement, "action_type");
                     int currentPlayerIndex = Integer.parseInt(getTextContent(gameMoveElement, "currentPlayerIndex"));
@@ -129,7 +128,7 @@ public class XmlUtils {
                         if (playerNode.getNodeType() == Node.ELEMENT_NODE) {
                             Element playerElement = (Element) playerNode;
 
-                            logElement(playerElement);
+
 
                             List<Card> hand = new ArrayList<>();
                             NodeList cardNodes = playerElement.getElementsByTagName("card");
@@ -137,15 +136,15 @@ public class XmlUtils {
                                 Node cardNode = cardNodes.item(k);
                                 if (cardNode.getNodeType() == Node.ELEMENT_NODE) {
                                     Element cardElement = (Element) cardNode;
-                                    logElement(cardElement);
 
-                                    String cardStr = cardElement.getTextContent().trim(); // Get text content without <card> tags
+
+                                    String cardStr = cardElement.getTextContent().trim();
                                     Card card = Card.fromString(cardStr);
                                     hand.add(card);
                                 }
                             }
 
-                            Player player = new Player(hand); // Assuming Player constructor accepts a List<Card>
+                            Player player = new Player(hand);
                             players.add(player);
                         }
                     }
@@ -154,14 +153,14 @@ public class XmlUtils {
                     NodeList discardNodes = gameMoveElement.getElementsByTagName("discardPile");
                     if (discardNodes.getLength() > 0) {
                         Element discardElement = (Element) discardNodes.item(0);
-                        logElement(discardElement);
+
 
                         NodeList cardNodes = discardElement.getElementsByTagName("card");
                         for (int k = 0; k < cardNodes.getLength(); k++) {
                             Node cardNode = cardNodes.item(k);
                             if (cardNode.getNodeType() == Node.ELEMENT_NODE) {
                                 Element cardElement = (Element) cardNode;
-                                logElement(cardElement);
+
 
                                 String cardStr = cardElement.getTextContent().trim(); // Get text content without <card> tags
                                 Card card = Card.fromString(cardStr);
@@ -174,7 +173,7 @@ public class XmlUtils {
                     NodeList fireworksNodes = gameMoveElement.getElementsByTagName("fireworks");
                     if (fireworksNodes.getLength() > 0) {
                         Element fireworksElement = (Element) fireworksNodes.item(0);
-                        logElement(fireworksElement);
+
 
                         NodeList suitNodes = fireworksElement.getElementsByTagName("suit");
                         NodeList countNodes = fireworksElement.getElementsByTagName("count");
@@ -183,8 +182,7 @@ public class XmlUtils {
                                     countNodes.item(k).getNodeType() == Node.ELEMENT_NODE) {
                                 Element suitElement = (Element) suitNodes.item(k);
                                 Element countElement = (Element) countNodes.item(k);
-                                logElement(suitElement);
-                                logElement(countElement);
+
 
                                 String suitStr = suitElement.getTextContent().trim();
                                 int count = Integer.parseInt(countElement.getTextContent().trim());
@@ -207,20 +205,8 @@ public class XmlUtils {
         return gameMoves;
     }
 
-    private static void logElement(Element element) {
-        System.out.println("Element " + element.getTagName() + ": Attributes=" + getAttributesAsString(element));
-    }
 
-    private static String getAttributesAsString(Element element) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < element.getAttributes().getLength(); i++) {
-            sb.append(element.getAttributes().item(i).getNodeName())
-                    .append("=")
-                    .append(element.getAttributes().item(i).getNodeValue())
-                    .append(", ");
-        }
-        return sb.toString();
-    }
+
     private static String getTextContent(Element parentElement, String tagName) {
         NodeList nodeList = parentElement.getElementsByTagName(tagName);
         if (nodeList.getLength() > 0) {
@@ -238,7 +224,7 @@ public class XmlUtils {
             String suit = card.getCardSuit().toString();
 
 
-            String cardRepresentation = "<card>" + suit + " " + value + "</card>";
+            String cardRepresentation =  suit + " " + value;
             cardRepresentations.add(cardRepresentation);
         }
         return cardRepresentations;
@@ -263,5 +249,14 @@ public class XmlUtils {
         Transformer transformer = factory.newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.transform(new DOMSource(document), new StreamResult(new File(FILE_NAME)));
+    }
+
+    public static void createNewReplayFile() {
+        try {
+            Document document = createDocument("gameMoves");
+            saveDocument(document, FILE_NAME);
+        } catch (ParserConfigurationException | TransformerException ex) {
+            ex.printStackTrace();
+        }
     }
 }

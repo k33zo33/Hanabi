@@ -25,6 +25,7 @@
                   <MenuItem mnemonicParsing="false" onAction="#saveGame" text="Save game" />
                   <MenuItem mnemonicParsing="false" onAction="#loadGame" text="Load game" />
                   <MenuItem mnemonicParsing="false" onAction="#saveDocumentation" text="Save documentation" />
+                  <MenuItem mnemonicParsing="false" onAction="#replayGame" text="Replay game" />
 <!--                  <MenuItem mnemonicParsing="false" onAction="#replayGame" text="Replay game" />-->
               </items>
           </Menu>

@@ -10,7 +10,7 @@ public class CardListCell extends ListCell<Card> {
     private Text text = new Text();
 
     @Override
-    protected void updateItem(Card card, boolean empty) {
+    public void updateItem(Card card, boolean empty) {
         super.updateItem(card, empty);
         if (empty || card == null) {
             setGraphic(null);

@@ -19,6 +19,7 @@ This application is a Java-based simulation of the popular cooperative card game
 
 ## Setup Instructions
 
+
 ### Prerequisites
 - Java Development Kit (JDK) 11 or higher
 - Apache Maven
@@ -64,6 +65,7 @@ This application is a Java-based simulation of the popular cooperative card game
 - **In-game Chat**: Communicate with other players using JNDI and RMI technologies.
 - **XML Configuration**: Save and load game configurations and moves in XML format.
 - **Replay**: Replay saved game moves from XML files.
+
 
 ## Contributing
 Contributions are welcome! Please fork the repository and submit pull requests.
